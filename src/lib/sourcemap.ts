@@ -11,7 +11,16 @@ async function fetchMap(chunkUrl: string): Promise<IndexMap | null> {
   const js = await (await fetch(chunkUrl)).text();
   const name = js.match(/\/\/# sourceMappingURL=(\S+)\s*$/)?.[1];
   if (!name) return null;
-  return (await fetch(new URL(name, chunkUrl))).json();
+  const map: IndexMap = await (await fetch(new URL(name, chunkUrl))).json();
+  // Vite writes sources relative to the module URL (Card.tsx for /src/Card.tsx). Turn them into project paths
+  const origin = new URL(chunkUrl).origin;
+  map.sources = map.sources?.map((s) => {
+    if (/^[a-z-]+:/i.test(s) || s.startsWith('/')) return s;
+    const url = new URL(s, chunkUrl);
+    if (url.origin !== origin) return s;
+    return url.pathname.startsWith('/@fs/') ? url.pathname.slice('/@fs'.length) : url.pathname.slice(1);
+  });
+  return map;
 }
 
 const B64 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';

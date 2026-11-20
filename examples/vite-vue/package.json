@@ -1,0 +1,8 @@
+{
+  "name": "nudgix-example-vite-vue",
+  "private": true,
+  "type": "module",
+  "scripts": { "dev": "vite --port 5176" },
+  "dependencies": { "vue": "3.5.45" },
+  "devDependencies": { "@vitejs/plugin-vue": "^6.0.11", "vite": "^8.3.8" }
+}

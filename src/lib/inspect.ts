@@ -1,6 +1,8 @@
 // Inspecting and previewing elements inside the iframe. Uses the element's own document / window
 import { adapter } from './adapters';
-import { serverOwners } from './sourcemap';
+// code.ts imports IGNORED_COMPONENTS from here; both sides only use each other inside functions, so the cycle is safe
+import { reactChain, vueOf } from './code';
+import { fiberOf, serverOwners } from './sourcemap';
 import { PROPS, visibleShadow, type PropDef } from './props';
 import type { Category, Detection, ElementInfo, PropKey, Token, Tokens } from './types';
 
@@ -79,6 +81,7 @@ export function detectAll(el: Element, tokens: Tokens) {
 }
 
 export function componentChain(el: Element): string[] {
+  if (!fiberOf(el) && vueOf(el)) return reactChain(el, 6).map((p) => p.name);
   const key = Object.keys(el).find((k) => k.startsWith('__reactFiber$'));
   // biome-ignore lint: reads React internals
   let fiber = key ? (el as any)[key] : null;

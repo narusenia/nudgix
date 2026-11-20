@@ -1,9 +1,9 @@
 import { Check, ChevronDown, ChevronRight, Copy, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useT } from '../i18n';
-import { annotate, fetchSource, findUsages, highlight, nearestSrc, reactChain, type ReactPart, type Snippet, storyJsx } from '../lib/code';
+import { annotate, fetchSource, findUsages, highlight, nearestSrc, partLoc, reactChain, type ReactPart, type Snippet, storyJsx, vueOf } from '../lib/code';
 import { locate } from '../lib/code';
-import { fiberOf, resolveStack } from '../lib/sourcemap';
+import { fiberOf } from '../lib/sourcemap';
 import type { Change, Selected } from '../lib/types';
 import { IconButton } from './IconButton';
 import s from './ui.module.css';
@@ -39,7 +39,7 @@ const save = (key: string, value: string) => {
 };
 
 /** Only React dev builds know where the JSX was written */
-const hasDebug = (el: Element) => !!fiberOf(el)?._debugStack;
+const hasDebug = (el: Element) => !!fiberOf(el)?._debugStack || !!vueOf(el)?.type.__file;
 
 function CopyButton({ text, label }: { text: string; label: string }) {
   const [done, setDone] = useState(false);
@@ -293,7 +293,7 @@ function HtmlNode({ el, depth, selectedEl, isChanged, onSelect, onPeek, whole }:
 function ReactRow({ part, change, defaultOpen }: { part: ReactPart; change?: Change; defaultOpen: boolean }) {
   const t = useT();
   const [open, setOpen] = useState(defaultOpen);
-  const loc = useAsync(() => resolveStack(part.stack), [part.stack]);
+  const loc = useAsync(() => partLoc(part), [part]);
   return (
     <div className={s.reactRow}>
       <button type="button" className={s.codeToggle} aria-expanded={open} onClick={() => setOpen((o) => !o)}>
@@ -384,7 +384,7 @@ export function CodeDrawer({ selected, doc, change, isChanged, onSelect, onPeek,
         <div className={s.seg}>
           {(['html', 'react'] as const).map((k) => (
             <button key={k} type="button" className={s.segItem} data-pressed={tab === k ? '' : undefined} onClick={() => pick(k)}>
-              {k === 'html' ? 'HTML' : 'React'}
+              {k === 'html' ? 'HTML' : selected && vueOf(selected.el) ? 'Vue' : 'React'}
             </button>
           ))}
         </div>

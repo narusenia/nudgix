@@ -4,7 +4,7 @@ import type { Dict } from '../i18n';
 import { IGNORED_COMPONENTS } from './inspect';
 import { adapter } from './adapters';
 import { fileOf, matchedRules } from './css';
-import { getProjectDir } from './project';
+import { getProjectDir, relativeToProject } from './project';
 import { fiberOf, resolveStack, serverOwners, sourceOf, stackOf } from './sourcemap';
 import type { Change, PropKey } from './types';
 
@@ -14,7 +14,58 @@ export type ReactPart = {
   props: [string, string][];
   /** Stack of where this component was written in JSX */
   stack: string | undefined;
+  /** Vue keeps no line numbers, only the .vue file. Where to look for the line instead */
+  vue?: { file: string; texts: string[] };
 };
+
+// biome-ignore lint: reads Vue internals
+export const vueOf = (el: Element): any => (el as any).__vueParentComponent;
+// biome-ignore lint: reads Vue internals
+const vueName = (inst: any): string | undefined =>
+  inst.type.name ?? inst.type.__name ?? inst.type.__file?.match(/([^/]+)\.vue$/)?.[1];
+const kebab = (s: string) => s.replace(/([a-z\d])([A-Z])/g, '$1-$2').toLowerCase();
+
+/** First line in the file containing one of the texts, as 'src/a.vue:12' */
+async function findLine(file: string, texts: string[]): Promise<string | null> {
+  for (const text of texts) {
+    const res = await fetch(`api/find?file=${encodeURIComponent(file)}&text=${encodeURIComponent(text)}`).catch(() => null);
+    const line = res?.ok ? ((await res.json()) as { line: number | null }).line : null;
+    if (line) return `${file}:${line}`;
+  }
+  return null;
+}
+
+/** Where a level of the chain is written: the JSX stack for React, a search in the parent .vue file for Vue */
+export const partLoc = (part: ReactPart): Promise<string | null> =>
+  part.vue ? findLine(part.vue.file, part.vue.texts) : resolveStack(part.stack).catch(() => null);
+
+/** Vue dev builds keep each component's .vue path (__file). Walk the instances up from the element */
+function vueChain(el: Element, max: number): ReactPart[] {
+  const out: ReactPart[] = [];
+  for (let inst = vueOf(el); inst && out.length < max; inst = inst.parent) {
+    const name = vueName(inst);
+    if (!name || IGNORED_COMPONENTS.test(name)) continue;
+    const parentFile = inst.parent?.type.__file && relativeToProject(inst.parent.type.__file);
+    out.push({
+      name,
+      props: Object.entries((inst.props ?? {}) as Record<string, unknown>).map(([k, v]) => [k, preview(v)] as [string, string]),
+      stack: undefined,
+      vue: parentFile ? { file: parentFile, texts: [`<${name}`, `<${kebab(name)}`] } : undefined,
+    });
+  }
+  return out;
+}
+
+/** Where a Vue element is written (inside its component's template) and where that component is used */
+async function vueSource(el: Element): Promise<{ self: string | null; usage: string | null }> {
+  const inst = vueOf(el);
+  const file = inst?.type.__file && relativeToProject(inst.type.__file);
+  if (!file) return { self: null, usage: null };
+  const tag = el.tagName.toLowerCase();
+  const self = await findLine(file, [...[...el.classList].filter((c) => !c.startsWith('data-v-')).map((c) => `class="${c}`), `<${tag} `, `<${tag}>`]);
+  const usage = await (vueChain(el, 1)[0]?.vue ? partLoc(vueChain(el, 1)[0]) : null);
+  return { self: self ?? `${file}:1`, usage };
+}
 
 // biome-ignore lint: reads React internals
 const nameOf = (type: any): string | undefined =>
@@ -46,6 +97,7 @@ export function preview(v: unknown, depth = 0): string {
 /** Component chain walked up from the element (nearest first) */
 export function reactChain(el: Element, max = 8): ReactPart[] {
   const host = fiberOf(el);
+  if (!host && vueOf(el)) return vueChain(el, max);
   const out: ReactPart[] = serverOwners(host)
     .filter((o) => o.name && !IGNORED_COMPONENTS.test(o.name))
     .map((o) => ({
@@ -75,7 +127,7 @@ export function reactChain(el: Element, max = 8): ReactPart[] {
  */
 export async function nearestSrc(el: Element): Promise<{ name: string; loc: string } | null> {
   for (const part of reactChain(el, 12)) {
-    const loc = await resolveStack(part.stack).catch(() => null);
+    const loc = await partLoc(part);
     if (loc) return { name: part.name, loc };
   }
   return null;
@@ -198,7 +250,7 @@ export async function highlight(lines: string[]): Promise<{ content: string; sty
  * Without React (plain HTML etc.), self is the location of the last CSS rule matching the element
  */
 export async function locate(el: Element): Promise<{ self: string | null; usage: string | null }> {
-  const react = await sourceOf(el);
+  const react = vueOf(el) ? await vueSource(el) : await sourceOf(el);
   if (react.self || react.usage) return react;
   for (const rule of matchedRules(el).reverse()) {
     const file = fileOf(rule, getProjectDir());

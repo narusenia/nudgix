@@ -1,6 +1,6 @@
 # nudgix
 
-Nudge your local UI in the browser, then hand the list of tweaks to Claude Code as a prompt. nudgix never edits your source.
+Nudge your local UI in the browser, then hand the list of tweaks to your coding agent as a prompt. The prompt is plain text, so it works with Claude Code, Codex, Cursor or any other agent. nudgix never edits your source.
 
 [日本語](README.ja.md)
 
@@ -47,7 +47,7 @@ npx nudgix start --target 3001 --port 4800
 
 ## Claude Code skill
 
-The prompt panel can install the `/apply-nudges` skill into your project (`.claude/skills/apply-nudges/`). With it, prompts drop the instructions and are just `/apply-nudges`, the adapter and the changes. An existing skill is never overwritten.
+This part is optional and only for Claude Code. The prompt panel can install the `/apply-nudges` skill into your project (`.claude/skills/apply-nudges/`). With it, prompts drop the instructions and are just `/apply-nudges`, the adapter and the changes. An existing skill is never overwritten. If you also hand prompts to other agents, skip the skill: they would not know `/apply-nudges`.
 
 ## Limits
 

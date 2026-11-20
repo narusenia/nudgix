@@ -1,7 +1,7 @@
 {
   "name": "nudgix",
   "version": "0.1.0",
-  "description": "Nudge your local UI in the browser and turn the tweaks into a prompt for Claude Code",
+  "description": "Nudge your local UI in the browser and turn the tweaks into a prompt for your coding agent",
   "license": "MIT",
   "type": "module",
   "repository": { "type": "git", "url": "git+https://github.com/narusenia/nudgix.git" },

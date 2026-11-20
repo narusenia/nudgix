@@ -39,6 +39,7 @@ const SHORTHAND: Record<string, string> = {
   'margin-bottom': 'margin',
   'margin-left': 'margin',
   'border-color': 'border',
+  'background-color': 'background',
   'border-radius': 'border-radius',
 };
 

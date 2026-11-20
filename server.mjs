@@ -7,6 +7,7 @@ import http from 'node:http';
 import net from 'node:net';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { loadThemeTokens } from './server/tailwind.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const BASE = '/__nudgix/';
@@ -23,7 +24,8 @@ export async function inspectProject(dir) {
   } catch {}
   const deps = { ...pkg.dependencies, ...pkg.devDependencies };
   const framework = deps.next ? 'next' : deps.astro ? 'astro' : deps.vite ? 'vite' : 'other';
-  const adapter = 'css-vars';
+  const tailwind = String(deps.tailwindcss ?? deps['@tailwindcss/postcss'] ?? deps['@tailwindcss/vite'] ?? '');
+  const adapter = /^\D*4/.test(tailwind) ? 'tailwind-v4' : 'css-vars';
   const runner = (await exists(path.join(dir, 'pnpm-lock.yaml')))
     ? 'pnpm'
     : (await exists(path.join(dir, 'yarn.lock')))
@@ -32,8 +34,10 @@ export async function inspectProject(dir) {
         ? 'bun'
         : 'npm';
   const devCommand = pkg.scripts?.dev ? `${runner} ${runner === 'npm' ? 'run dev' : 'dev'}` : null;
-  // Only the framework's own default port, so another app running on a common port is never picked by mistake
-  const ports = { next: [3000], astro: [4321], vite: [5173], other: [3000, 5173, 4321, 8080, 8000] }[framework];
+  // A port in the dev script (next dev -p 3100, vite --port 5174) wins. Otherwise only the framework's default port,
+  // so another app running on a common port is never picked by mistake
+  const scriptPort = Number(pkg.scripts?.dev?.match(/(?:-p|--port)[\s=]+(\d+)/)?.[1]);
+  const ports = scriptPort ? [scriptPort] : { next: [3000], astro: [4321], vite: [5173], other: [3000, 5173, 4321, 8080, 8000] }[framework];
   return { framework, adapter, devCommand, ports };
 }
 
@@ -98,8 +102,13 @@ export async function startServer({ port = 4747, target, dir = process.cwd(), st
       return true;
     }
     if (url === `${BASE}api/tokens`) {
-      // css-vars reads the tokens from the page in the browser, so the server has nothing to send
-      sendJson(res, 200, { adapter: project.adapter, tokens: null });
+      try {
+        // css-vars reads the tokens from the page in the browser, so the server has nothing to send
+        const tokens = project.adapter === 'tailwind-v4' ? await loadThemeTokens(DIR) : null;
+        sendJson(res, 200, { adapter: project.adapter, tokens });
+      } catch (error) {
+        sendJson(res, 500, { error: String(error?.message ?? error) });
+      }
       return true;
     }
     if (url === `${BASE}api/install-skill` && req.method === 'POST') {
@@ -111,6 +120,18 @@ export async function startServer({ port = 4747, target, dir = process.cwd(), st
       } catch (error) {
         if (error?.code === 'EEXIST') return sendJson(res, 409, { error: 'exists', path: dest }), true;
         sendJson(res, 500, { error: String(error?.message ?? error) });
+      }
+      return true;
+    }
+    // Source map of a server chunk (Next.js Server Components run on the server, so their stacks point at files in .next)
+    if (url === `${BASE}api/server-map`) {
+      const file = path.resolve(query.get('file') ?? '');
+      const inside = path.relative(path.join(DIR, '.next'), file);
+      if (!file.endsWith('.js') || !inside || inside.startsWith('..') || path.isAbsolute(inside)) return sendJson(res, 400, { error: 'bad request' }), true;
+      try {
+        sendJson(res, 200, JSON.parse(await readFile(`${file}.map`, 'utf8')));
+      } catch {
+        sendJson(res, 404, { error: 'not found' });
       }
       return true;
     }
@@ -165,7 +186,8 @@ export async function startServer({ port = 4747, target, dir = process.cwd(), st
         sendJson(res, 200, { count: hits.length, hits: hits.slice(0, 200) });
       };
       // Outside a git repository, search the folder as plain files
-      grep([], (error, stdout) => (error?.code === 128 ? grep(['--no-index'], reply) : reply(error, stdout)));
+      // --untracked also counts files not committed yet (still skipping .gitignore'd ones)
+      grep(['--untracked'], (error, stdout) => (error?.code === 128 ? grep(['--no-index'], reply) : reply(error, stdout)));
       return true;
     }
     return false;

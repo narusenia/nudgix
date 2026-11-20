@@ -71,9 +71,12 @@ function resolveIn(map: IndexMap, line: number, column: number): { source: strin
 /** スタックのうち、jsxDEV の次の行（要素を作ったコンポーネントの中）を取り出す */
 function firstFrame(stack: string): { url: string; line: number; column: number } | null {
   for (const raw of stack.split('\n').slice(1)) {
-    const m = raw.match(/\(((?:https?|webpack-internal):\/\/.+):(\d+):(\d+)\)$/) ?? raw.match(/at ((?:https?|webpack-internal):\/\/\S+):(\d+):(\d+)$/);
-    if (!m || /jsxDEV|react-dom|react_stack/.test(raw)) continue;
-    return { url: m[1], line: Number(m[2]), column: Number(m[3]) };
+    // Server Components (Next.js App Router) show up as about://React/Server/file:///…/.next/….js?17
+    const m =
+      raw.match(/\((?:about:\/\/React\/Server\/)?((?:https?|webpack-internal|file):\/\/.+):(\d+):(\d+)\)$/) ??
+      raw.match(/at (?:about:\/\/React\/Server\/)?((?:https?|webpack-internal|file):\/\/\S+):(\d+):(\d+)$/);
+    if (!m || /jsxDEV|react-dom|react_stack|react-server-dom|fakeJSXCallSite/.test(raw)) continue;
+    return { url: m[1].replace(/\?\d+$/, ''), line: Number(m[2]), column: Number(m[3]) };
   }
   return null;
 }
@@ -104,7 +107,12 @@ export async function resolveStack(stack: string | undefined): Promise<string | 
   if (!frame) return null;
   let map = mapCache.get(frame.url);
   if (!map) {
-    const load = frame.url.startsWith('webpack-internal:') ? webpackMap(frame.url) : fetchMap(frame.url);
+    const load = frame.url.startsWith('webpack-internal:')
+      ? webpackMap(frame.url)
+      : frame.url.startsWith('file:')
+        ? // A server chunk on disk: the nudgix server reads its .map file
+          fetch(`api/server-map?file=${encodeURIComponent(decodeURI(frame.url.slice('file://'.length)))}`).then((r) => (r.ok ? r.json() : null))
+        : fetchMap(frame.url);
     mapCache.set(frame.url, (map = load.catch(() => null)));
   }
   const resolved = await map;
@@ -127,7 +135,22 @@ export const fiberOf = (el: Element): any => {
 
 /** その JSX を書いた場所のスタック。開発ビルドだけが持つ */
 // biome-ignore lint: React の内部構造を読む
-export const stackOf = (f: any): string | undefined => (f?._debugStack ? String(f._debugStack.stack ?? f._debugStack) : undefined);
+export const stackOf = (f: any): string | undefined => {
+  // A client fiber has _debugStack; a Server Component's info object has debugStack
+  const stack = f?._debugStack ?? f?.debugStack;
+  return stack ? String(stack.stack ?? stack) : undefined;
+};
+
+/**
+ * Server Components have no fibers in the browser. The element's owner chain still names them
+ * ({ name: 'Card', env: 'Server', props, debugStack }), up to the first client component.
+ */
+// biome-ignore lint: React の内部構造を読む
+export function serverOwners(fiber: any): any[] {
+  const out = [];
+  for (let owner = fiber?._debugOwner; owner && 'env' in owner && out.length < 8; owner = owner.owner) out.push(owner);
+  return out;
+}
 
 export async function sourceOf(el: Element): Promise<{ self: string | null; usage: string | null }> {
   const fiber = fiberOf(el);

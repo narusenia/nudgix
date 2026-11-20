@@ -2,9 +2,10 @@
 import type { HighlighterCore } from 'shiki/core';
 import type { Dict } from '../i18n';
 import { IGNORED_COMPONENTS } from './inspect';
+import { adapter } from './adapters';
 import { fileOf, matchedRules } from './css';
 import { getProjectDir } from './project';
-import { fiberOf, resolveStack, sourceOf, stackOf } from './sourcemap';
+import { fiberOf, resolveStack, serverOwners, sourceOf, stackOf } from './sourcemap';
 import type { Change, PropKey } from './types';
 
 export type ReactPart = {
@@ -44,8 +45,17 @@ export function preview(v: unknown, depth = 0): string {
 
 /** 要素から上へたどった部品の連なり（近い順） */
 export function reactChain(el: Element, max = 8): ReactPart[] {
-  let fiber = fiberOf(el)?.return;
-  const out: ReactPart[] = [];
+  const host = fiberOf(el);
+  const out: ReactPart[] = serverOwners(host)
+    .filter((o) => o.name && !IGNORED_COMPONENTS.test(o.name))
+    .map((o) => ({
+      name: o.name,
+      props: Object.entries((o.props ?? {}) as Record<string, unknown>)
+        .filter(([k]) => k !== 'children')
+        .map(([k, v]) => [k, preview(v)] as [string, string]),
+      stack: stackOf(o),
+    }));
+  let fiber = host?.return;
   while (fiber && out.length < max) {
     const name = nameOf(fiber.type);
     if (name && !IGNORED_COMPONENTS.test(name) && !name.endsWith('Provider')) {
@@ -139,9 +149,10 @@ export function annotate(snippet: Snippet, change: Change | undefined, t: Dict):
   for (const [key, next] of Object.entries(change.props) as [PropKey, string][]) {
     const d = change.baseline[key];
     if (d?.how !== 'class') continue;
-    const re = new RegExp(`(^|[^\\w.])${d.name.replaceAll('.', '\\.')}(?![\\w.])`);
+    const names = adapter().written(key, d.name).map((n) => n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+    const re = new RegExp(`(^|[^\\w.-])(${names.join('|')})(?![\\w.-])`);
     snippet.lines.forEach((line, i) => {
-      if (re.test(line)) add(i, `${t.props[key]} → ${next}`);
+      if (re.test(line)) add(i, `${t.props[key]} → ${adapter().format(key, next)}`);
     });
   }
   if (change.text?.from) {

@@ -1,11 +1,12 @@
 // iframe 内の要素を調べる・プレビューする処理。要素の持ち主の document / window を使う
 import { adapter } from './adapters';
+import { serverOwners } from './sourcemap';
 import { PROPS, visibleShadow, type PropDef } from './props';
 import type { Category, Detection, ElementInfo, PropKey, Token, Tokens } from './types';
 
 // Next.js の内部コンポーネントは手がかりにならないので、コンポーネントの連なりから外す
 export const IGNORED_COMPONENTS =
-  /^(InnerLayoutRouter|OuterLayoutRouter|RenderFromTemplateContext|ScrollAndFocusHandler|InnerScrollAndFocusHandler|LoadingBoundary|ErrorBoundary.*|HTTPAccessFallback.*|RedirectBoundary|RedirectErrorBoundary|Router|AppRouter|HotReload|ServerRoot|ClientPageRoot|ClientSegmentRoot|SegmentViewNode|SegmentStateProvider|DevRootHTTPAccessFallbackBoundary|AppDevOverlay.*|ReactDevOverlay|Head|MetadataOutlet|OutletBoundary|ViewportBoundary|MetadataBoundary|Suspense|Fragment|_c\d*|Anonymous)$/;
+  /^(InnerLayoutRouter|OuterLayoutRouter|RenderFromTemplateContext|ScrollAndFocusHandler|InnerScrollAndFocusHandler|LoadingBoundary|ErrorBoundary.*|HTTPAccessFallback.*|RedirectBoundary|RedirectErrorBoundary|Router|AppRouter|HotReload|ServerRoot|ClientPageRoot|ClientSegmentRoot|SegmentViewNode|SegmentStateProvider|DevRootHTTPAccessFallbackBoundary|AppDevOverlay.*|ReactDevOverlay|Head|MetadataOutlet|OutletBoundary|ViewportBoundary|MetadataBoundary|Suspense|Fragment|_c\d*|Anonymous|\w*Context)$/;
 
 const PROBE_BASE = 'position:absolute;visibility:hidden;pointer-events:none;width:0;height:0;overflow:hidden;';
 const probes = new WeakMap<Document, HTMLElement>();
@@ -81,7 +82,8 @@ export function componentChain(el: Element): string[] {
   const key = Object.keys(el).find((k) => k.startsWith('__reactFiber$'));
   // biome-ignore lint: React の内部構造を読む
   let fiber = key ? (el as any)[key] : null;
-  const names: string[] = [];
+  // Server Components that rendered the element come first, then the client components above it
+  const names: string[] = serverOwners(fiber).map((o) => o.name).filter((n) => n && !IGNORED_COMPONENTS.test(n));
   while (fiber && names.length < 6) {
     const type = fiber.type;
     if (type && typeof type !== 'string') {

@@ -9,9 +9,9 @@ export const setProjectDir = (dir: string) => {
 export function relativeToProject(file: string): string | null {
   const p = decodeURI(file.replace(/^file:\/\//, '')).replace(/[?#].*$/, '');
   if (p.includes('/node_modules/')) return null;
-  // webpack は webpack://_N_E/./app/page.tsx の形
-  const webpack = p.match(/^webpack:\/\/[^/]*\/\.\/(.+)$/)?.[1];
-  if (webpack) return webpack;
+  // webpack writes webpack://_N_E/./app/page.tsx, Turbopack turbopack:///[project]/app/page.tsx
+  const bundler = p.match(/^webpack:\/\/[^/]*\/\.\/(.+)$/)?.[1] ?? p.match(/^(?:turbopack:\/\/\/)?\[project\]\/(.+)$/)?.[1];
+  if (bundler) return bundler;
   if (projectDir && p.startsWith(`${projectDir}/`)) return p.slice(projectDir.length + 1);
   return p.match(/\/(src\/.+)$/)?.[1] ?? (p.startsWith('/') ? null : p.replace(/^\.\//, ''));
 }

@@ -21,7 +21,7 @@ import { DICTS, LangContext, type Lang } from './i18n';
 import { displayValue } from './lib/format';
 import { clearResolvedCache, describeElement, detect, detectAll, preview, previewRaw, resolveToken, similarTo } from './lib/inspect';
 import { PROP_BY_KEY, PROPS, tokenOf, type PropDef } from './lib/props';
-import { findByLocator, loadSaved, locatorOf, save } from './lib/persist';
+import { findByLocator, loadSaved, locatorOf, save, setSaveScope } from './lib/persist';
 import { buildPrompt } from './lib/prompt';
 import { adapter, emptyTokens, setAdapter } from './lib/adapters';
 import { locate } from './lib/code';
@@ -126,12 +126,19 @@ export function App() {
   // ---------------------------------------------------------------- startup state
   const [status, setStatus] = useState<Status | null>(null);
   const [ready, setReady] = useState(false);
+  // The project folder whose saved changes are loaded
+  const scope = useRef('');
   const refreshStatus = useCallback(async () => {
     try {
       const next: Status = await (await fetch('api/status', { cache: 'no-store' })).json();
       setStatus(next);
       setAdapter(next.adapter);
       setProjectDir(next.dir);
+      if (scope.current !== next.dir) {
+        scope.current = next.dir;
+        setSaveScope(next.dir);
+        changes.current = new Map(loadSaved().map((c) => [document.createElement('i'), c]));
+      }
       if (next.targetUp) setReady(true);
     } catch {}
   }, []);
@@ -206,7 +213,8 @@ export function App() {
   // Element → change. Elements are iframe DOM nodes, so keep them out of state and just trigger a rerender on change
   // Saved changes are bound to placeholder elements not on the page until their element is found
   const changes = useRef<Map<Element, Change>>(null as unknown as Map<Element, Change>);
-  changes.current ??= new Map(loadSaved().map((c) => [document.createElement('i'), c]));
+  // Filled from storage once the project folder is known (see refreshStatus)
+  changes.current ??= new Map();
   const [version, bump] = useReducer((x: number) => x + 1, 0);
 
   const loadTokens = useCallback(async () => {

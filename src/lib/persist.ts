@@ -1,7 +1,11 @@
 // Saves committed changes in the browser, and after the iframe reloads, finds the elements and reapplies them
 import type { Change } from './types';
 
-const KEY = 'nudgix.changes.v1';
+// One editor origin (localhost:4747) serves whichever project nudgix was started in, so changes are kept per project folder
+let KEY = 'nudgix.changes.v1';
+export const setSaveScope = (dir: string) => {
+  KEY = `nudgix.changes.v1:${dir}`;
+};
 
 export type Saved = Change & { locator: string };
 

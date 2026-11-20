@@ -71,12 +71,12 @@ export function reactChain(el: Element, max = 8): ReactPart[] {
 
 /**
  * Elements created inside a library (node_modules) have no source location, so walk up the components and
- * return the first component whose JSX is written in src, with its location
+ * return the first component whose JSX is written in the project, with its location
  */
 export async function nearestSrc(el: Element): Promise<{ name: string; loc: string } | null> {
   for (const part of reactChain(el, 12)) {
     const loc = await resolveStack(part.stack).catch(() => null);
-    if (loc?.startsWith('src/')) return { name: part.name, loc };
+    if (loc) return { name: part.name, loc };
   }
   return null;
 }

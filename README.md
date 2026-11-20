@@ -25,6 +25,7 @@ nudgix finds the dev server from your framework's default port (Next.js 3000, Vi
 | Adapter | How tokens are read |
 |---|---|
 | `css-vars` | Custom properties on `:root` in the page's stylesheets. Works with any setup |
+| `tailwind-v4` | Tailwind's default theme and the project's `@theme` blocks. Prompts are written as utilities (`pt-4`, `rounded-xl`) |
 
 ## Development
 

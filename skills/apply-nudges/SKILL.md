@@ -109,3 +109,12 @@ Styles are plain CSS (or CSS Modules, styled-components and so on) with custom p
 - Token names are CSS custom properties such as `--space-4`. Write them as `var(--space-4)`
 - Change the CSS rule that styles the element. The location line points at it when nudgix could tell
 - If the rule is shared by other elements and only this one should change, ask whether to add a modifier class
+
+### tailwind-v4
+
+Styles are Tailwind CSS v4 utilities. Tokens come from the theme (`@theme` in the project CSS and Tailwind's defaults).
+
+- Values are written as utilities: `pt-4`, `py-4`, `bg-brand-500`, `rounded-xl`, `text-sm`, `font-semibold`, `shadow-md`
+- `paddingBlock` is `py-*`, `paddingInline` `px-*`, `padding` `p-*`. Replace the utility that sets the value now (for example `p-6` → `p-4` when all sides change, or add `pt-4` next to `p-6` when only the top changes)
+- Keep variants (`md:`, `hover:`) as they are unless the change says otherwise
+- A value in parentheses has no utility in the theme. Use an arbitrary value (`p-[13px]`) only after asking

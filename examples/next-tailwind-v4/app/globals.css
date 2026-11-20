@@ -1,0 +1,8 @@
+@import "tailwindcss";
+
+@theme {
+  --color-brand-50: oklch(97% 0.02 270);
+  --color-brand-500: oklch(55% 0.2 270);
+  --color-brand-700: oklch(42% 0.18 270);
+  --radius-card: 1rem;
+}

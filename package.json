@@ -1,13 +1,27 @@
 {
   "name": "nudgix",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Nudge your local UI in the browser and turn the tweaks into a prompt for your coding agent",
   "license": "MIT",
   "type": "module",
-  "repository": { "type": "git", "url": "git+https://github.com/narusenia/nudgix.git" },
-  "bin": { "nudgix": "bin/nudgix.mjs" },
-  "files": ["bin", "server.mjs", "server", "!server/*.test.mjs", "dist", "skills"],
-  "engines": { "node": ">=20" },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/narusenia/nudgix.git"
+  },
+  "bin": {
+    "nudgix": "bin/nudgix.mjs"
+  },
+  "files": [
+    "bin",
+    "server.mjs",
+    "server",
+    "!server/*.test.mjs",
+    "dist",
+    "skills"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "dev": "NUDGIX_DEV=1 node bin/nudgix.mjs start",
     "build": "vite build",

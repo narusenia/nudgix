@@ -1,4 +1,4 @@
-/* ---------------------------------------------------------------- 骨格 */
+/* ---------------------------------------------------------------- shell */
 .app {
   height: 100%;
   padding-right: var(--drawer, 0px);
@@ -138,7 +138,7 @@
   font-size: 11px;
 }
 
-/* ---------------------------------------------------------------- ボタン */
+/* ---------------------------------------------------------------- buttons */
 .iconButton {
   flex: none;
   width: 28px;
@@ -232,7 +232,7 @@
   box-shadow: var(--shadow);
 }
 
-/* ---------------------------------------------------------------- ツールチップ */
+/* ---------------------------------------------------------------- tooltip */
 .tip {
   display: flex;
   align-items: center;
@@ -258,7 +258,7 @@
   color: #9a9ca5;
 }
 
-/* ---------------------------------------------------------------- 画面（iframe） */
+/* ---------------------------------------------------------------- page (iframe) */
 .stage {
   flex: 1;
   min-height: 0;
@@ -295,7 +295,7 @@
 
 .box {
   position: absolute;
-  /* 画面の中身が透けて見えるよう半透明にする */
+  /* Translucent so the page shows through */
   border: 1.5px solid rgba(94, 106, 210, 0.5);
   border-radius: 2px;
 }
@@ -318,7 +318,7 @@
   white-space: nowrap;
 }
 
-/* ---------------------------------------------------------------- 左：パンくずと変更 */
+/* ---------------------------------------------------------------- left: breadcrumbs and changes */
 .crumbs {
   display: flex;
   flex-direction: column;
@@ -489,7 +489,7 @@
   color: var(--delta);
 }
 
-/* ---------------------------------------------------------------- 値の小さい見本 */
+/* ---------------------------------------------------------------- small value samples */
 .icoColor {
   flex: none;
   width: 11px;
@@ -538,7 +538,7 @@
   font: 600 10px/1 var(--sans);
 }
 
-/* ---------------------------------------------------------------- 右：プロパティとトークン */
+/* ---------------------------------------------------------------- right: properties and tokens */
 .target {
   padding: 2px 6px 8px;
 }
@@ -557,7 +557,7 @@
   text-overflow: ellipsis;
 }
 
-/* プロパティパネルの節。Figma のように、パネルの端から端まで線を引いて区切る */
+/* Property panel section. Like Figma, a line spans the panel edge to edge as a separator */
 .pSection {
   margin: 0 -8px;
   padding: 8px 8px 10px;
@@ -571,7 +571,7 @@
   color: var(--text);
 }
 
-/* 幅・高さは Figma の W・H のように2つ横に並べる */
+/* Width and height sit side by side, like Figma's W and H */
 .sizeGrid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -633,7 +633,7 @@
   padding: 0;
 }
 
-/* 揃えのパッド：3×3。選ばれたマスだけ子の並びの絵を出し、ほかは点にする */
+/* Alignment pad: 3×3. Only the selected cell shows the child layout icon; the rest are dots */
 .pad {
   display: grid;
   grid-template-columns: repeat(3, 22px);
@@ -820,7 +820,7 @@
   word-break: break-all;
 }
 
-/* ---------------------------------------------------------------- 起動待ち */
+/* ---------------------------------------------------------------- waiting for startup */
 .waiting {
   height: 100%;
   display: grid;
@@ -907,7 +907,7 @@
   color: var(--warn);
 }
 
-/* ---------------------------------------------------------------- 全画面モード */
+/* ---------------------------------------------------------------- fullscreen mode */
 .floatRoot {
   position: fixed;
   inset: 0;
@@ -967,10 +967,10 @@
   animation: floatIn 180ms var(--ease);
 }
 
-/* 列の空いた所は画面を触れるようにし、パネルだけ受け取る */
+/* Empty parts of the column let the page be clicked; only the panels take pointer events */
 .floatCol > * {
-  /* 半透明のパネルは重なり順が後ろに回り、上のパネルの影が下のパネルに落ちる。
-     全部を positioned にして、下のパネルが上のパネルの影を覆う順に重ねる */
+  /* Translucent panels drop back in stacking order, so an upper panel's shadow falls on the panel below.
+     Make them all positioned and stack them so a lower panel covers the shadow of the one above */
   position: relative;
   pointer-events: auto;
   flex: 0 1 auto;
@@ -981,7 +981,7 @@
   justify-content: flex-end;
 }
 
-/* 変更一覧とプロンプトは、触っていないときは画面が透けて見えるよう半透明にする */
+/* The changes list and prompt are translucent when idle so the page shows through */
 .floatBottom > * {
   opacity: 0.45;
   transition: opacity 150ms var(--ease);
@@ -992,7 +992,7 @@
   opacity: 1;
 }
 
-/* 全画面では、右のパネルも触っていないときは下の画面が透けて見えるようにする */
+/* In fullscreen, the right panel also lets the page show through when idle */
 .floatCol:not(.floatBottom) > * {
   opacity: 0.55;
   transition: opacity 150ms var(--ease);
@@ -1003,14 +1003,14 @@
   opacity: 1;
 }
 
-/* 半透明を切ったときは、触っていなくても不透明にする */
+/* With translucency off, stay opaque even when idle */
 .opaque .floatCol > *,
 .opaque .floatBar {
   opacity: 1;
 }
 
 .floatRight {
-  /* ストーリーのドロワーが開いている間は、その幅だけ左へ寄せる（zoom の中なので幅を割り戻す） */
+  /* Shift left by the story drawer's width while it is open (divide the width back out since this is inside zoom) */
   right: calc(12px + var(--drawer, 0px) / var(--ui-zoom, 1));
   transition: right 160ms var(--ease);
   --float-from: 12px;
@@ -1028,7 +1028,7 @@
   }
 }
 
-/* ---------------------------------------------------------------- 余白の帯と矩形選択 */
+/* ---------------------------------------------------------------- spacing bands and marquee selection */
 .bandMargin,
 .bandPadding,
 .bandGap {
@@ -1053,7 +1053,7 @@
   background: rgba(94, 106, 210, 0.12);
 }
 
-/* ---------------------------------------------------------------- 余白のボックスモデル図 */
+/* ---------------------------------------------------------------- spacing box model diagram */
 .boxModel {
   position: relative;
   display: flex;
@@ -1143,7 +1143,7 @@
   font-weight: 500;
 }
 
-/* ---------------------------------------------------------------- 大きい見本 */
+/* ---------------------------------------------------------------- large sample */
 .tokenListWrap {
   margin: 3px 0 6px;
 }
@@ -1197,13 +1197,13 @@
   color: var(--sub);
 }
 
-/* 影の値は長いので、台に重ならないよう折り返す */
+/* Shadow values are long, so wrap them to avoid overlapping the base */
 .bigSpecimen[data-cat='shadows'] .bigMeta {
   right: 56%;
   overflow-wrap: anywhere;
 }
 
-/* 影：明るい台に「今」と「変更後」のカードを並べる */
+/* Shadow: "current" and "after" cards side by side on a light base */
 .bigShadowStage {
   position: absolute;
   top: 8px;
@@ -1310,7 +1310,7 @@
   transition: font-size 120ms var(--ease);
 }
 
-/* ---------------------------------------------------------------- カーソルの下の変更前後 */
+/* ---------------------------------------------------------------- before/after under the cursor */
 .cursorTip {
   position: fixed;
   z-index: 50;
@@ -1347,7 +1347,7 @@
   color: #9a9ca5;
 }
 
-/* 影のような長い値は、ツールチップの幅で折り返す */
+/* Long values such as shadows wrap at the tooltip width */
 .cursorTipFrom,
 .cursorTipValue {
   white-space: normal;
@@ -1368,7 +1368,7 @@
   align-items: center;
 }
 
-/* ---------------------------------------------------------------- ⌘K パレット */
+/* ---------------------------------------------------------------- ⌘K palette */
 .paletteBackdrop {
   position: fixed;
   inset: 0;
@@ -1430,14 +1430,14 @@
   box-shadow: var(--shadow);
 }
 
-/* ---------------------------------------------------------------- 画面上のハンドル */
+/* ---------------------------------------------------------------- on-page handles */
 .handles {
   position: absolute;
   inset: 0;
   pointer-events: none;
 }
 
-/* 余白と gap の帯をつかむ所。帯の色は下の画面側で描いているので、普段は透明で、乗せたときだけ濃くする */
+/* Grab areas for spacing and gap bands. The band color is drawn on the page side below, so these stay transparent and darken only on hover */
 .zone {
   position: absolute;
   pointer-events: auto;
@@ -1460,7 +1460,7 @@
   background: var(--zone);
 }
 
-/* 値が 0 で帯が見えない辺は、要素に乗せている間だけ破線でつかめる場所を出す */
+/* For sides whose value is 0 and band invisible, show a dashed grab area only while hovering the element */
 .zoneZero {
   outline: 1px dashed var(--zone);
   outline-offset: -1px;
@@ -1476,9 +1476,9 @@
   background: #fff;
   box-shadow: 0 0 0 1.5px var(--accent), 0 2px 6px rgba(0, 0, 0, 0.35);
   pointer-events: auto;
-  /* --inv は寄せている拡大率の逆数。寄せてもハンドルの見た目の大きさは変えない */
+  /* --inv is the inverse of the zoom factor. Keeps handles the same on-screen size when zoomed */
   transform: translate(-50%, -50%) scale(var(--inv, 1));
-  /* 触っていないときは画面の邪魔にならないよう半透明にする。アイコンが読める濃さは残す */
+  /* Translucent when idle so it does not get in the way, but dark enough to read the icon */
   opacity: 0.6;
   transition: transform 120ms var(--ease), box-shadow 120ms var(--ease), opacity 120ms var(--ease);
 }
@@ -1510,7 +1510,7 @@
   cursor: ns-resize;
 }
 
-/* 吸い付いた瞬間に小さく弾む（key を変えて付け直すたびに再生される） */
+/* A small bounce on snap (replays each time the key changes and it remounts) */
 .moveGrip {
   position: absolute;
   display: grid;
@@ -1555,7 +1555,7 @@
   background: rgba(94, 106, 210, 0.2);
 }
 
-/* 別の区画へ移すときの、移し先の枠 */
+/* Target frame when moving into another container */
 .moveTarget {
   position: absolute;
   border: 1.5px solid var(--accent);
@@ -1572,14 +1572,14 @@
   pointer-events: none;
 }
 
-/* 幅と高さは Figma のリサイズのつまみと同じ、枠の線の上の白い四角。薄くせず常に見せる */
+/* Width and height use white squares on the frame line, like Figma's resize grips. Always fully visible */
 .handleSize {
   opacity: 1;
   background: #fff;
   box-shadow: 0 0 0 1.5px var(--accent), 0 1px 3px rgba(0, 0, 0, 0.3);
 }
 
-/* 枠の下に出す 幅 × 高さ */
+/* width × height shown below the frame */
 .sizeBadge {
   position: absolute;
   transform-origin: 0 0;
@@ -1599,7 +1599,7 @@
 }
 
 .handleHint {
-  /* ハンドルと同じ座標（iframe の中の位置）で置く。fixed だと拡大・ずらした画面でずれる */
+  /* Positioned in the same coordinates as the handles (inside the iframe). fixed would drift when the page is zoomed or offset */
   position: absolute;
   transform-origin: 0 0;
   scale: var(--inv, 1);
@@ -1687,7 +1687,7 @@
   pointer-events: auto;
 }
 
-/* UI の大きさ（密度）。iframe を含む .stage には掛けない */
+/* UI size (density). Not applied to .stage, which contains the iframe */
 .header,
 .left,
 .right,
@@ -1700,7 +1700,7 @@
   zoom: var(--ui-zoom, 1);
 }
 
-/* ---------------------------------------------------------------- ドラッグ中の比較 */
+/* ---------------------------------------------------------------- comparison while dragging */
 .ghostShape,
 .ghostLine {
   position: absolute;
@@ -1771,7 +1771,7 @@
   background: var(--panel);
 }
 
-/* 右側に置いたときは、開くトグルも右端にそろえる */
+/* When placed on the right, align the open toggle to the right edge too */
 .floatRight .floatPill {
   align-self: flex-end;
 }
@@ -1792,7 +1792,7 @@
   background: var(--raised);
 }
 
-/* ツールバーも、触っていないときは下の画面が見えるよう半透明にする */
+/* The toolbar is also translucent when idle so the page below shows */
 .floatBar {
   opacity: 0.5;
   transition: opacity 150ms var(--ease);
@@ -1812,7 +1812,7 @@
   cursor: grabbing;
 }
 
-/* ---------------------------------------------------------------- ストーリーのギャラリー（右端の Drawer） */
+/* ---------------------------------------------------------------- story gallery (right-edge drawer) */
 .galleryTab,
 .galleryTabOpen {
   position: fixed;
@@ -1975,7 +1975,7 @@
   pointer-events: none;
 }
 
-/* ---------------------------------------------------------------- コードピーク */
+/* ---------------------------------------------------------------- code peek */
 .panelTabs {
   margin-top: 8px;
   align-self: flex-start;
@@ -2325,7 +2325,7 @@
   max-height: 140px;
 }
 
-/* shiki の色。ダークが既定で、ライトのときは --shiki-light を使う */
+/* shiki colors. Dark is the default; light mode uses --shiki-light */
 .codeText > span {
   color: var(--shiki-dark);
 }

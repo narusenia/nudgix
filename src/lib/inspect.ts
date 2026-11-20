@@ -1,10 +1,10 @@
-// iframe 内の要素を調べる・プレビューする処理。要素の持ち主の document / window を使う
+// Inspecting and previewing elements inside the iframe. Uses the element's own document / window
 import { adapter } from './adapters';
 import { serverOwners } from './sourcemap';
 import { PROPS, visibleShadow, type PropDef } from './props';
 import type { Category, Detection, ElementInfo, PropKey, Token, Tokens } from './types';
 
-// Next.js の内部コンポーネントは手がかりにならないので、コンポーネントの連なりから外す
+// Next.js internal components are not useful hints, so drop them from the component chain
 export const IGNORED_COMPONENTS =
   /^(InnerLayoutRouter|OuterLayoutRouter|RenderFromTemplateContext|ScrollAndFocusHandler|InnerScrollAndFocusHandler|LoadingBoundary|ErrorBoundary.*|HTTPAccessFallback.*|RedirectBoundary|RedirectErrorBoundary|Router|AppRouter|HotReload|ServerRoot|ClientPageRoot|ClientSegmentRoot|SegmentViewNode|SegmentStateProvider|DevRootHTTPAccessFallbackBoundary|AppDevOverlay.*|ReactDevOverlay|Head|MetadataOutlet|OutletBoundary|ViewportBoundary|MetadataBoundary|Suspense|Fragment|_c\d*|Anonymous|\w*Context)$/;
 
@@ -16,7 +16,7 @@ export function clearResolvedCache(doc: Document) {
   resolvedCache.delete(doc);
 }
 
-// 変数を当てた見えない要素の計算値を読み、要素の計算値と同じ書式で比べられるようにする
+// Read the computed value of an invisible element with the variable applied, so it compares in the same format as the element's computed value
 export function resolveToken(doc: Document, category: Category, token: Token): string {
   let cache = resolvedCache.get(doc);
   if (!cache) resolvedCache.set(doc, (cache = new Map()));
@@ -50,8 +50,8 @@ export function resolveToken(doc: Document, category: Category, token: Token): s
 
 const isZero = (value: string) => value === '0px' || value === 'rgba(0, 0, 0, 0)' || value === 'transparent' || value === 'none';
 
-// 要素がいま使っているトークンを推定する。書き方（class や CSS の規則）から分かればそれを正とし、
-// なければ計算値が同じトークンを候補として挙げる（同じ値のトークンが複数あると1つに決まらない）
+// Infer the tokens an element currently uses. If the authored styles (class or CSS rule) tell, trust that;
+// otherwise list tokens with the same computed value as candidates (ambiguous when several tokens share a value)
 export function detect(el: Element, prop: PropDef, tokens: Tokens): Detection {
   const doc = el.ownerDocument;
   const list = tokens[prop.category];
@@ -64,7 +64,7 @@ export function detect(el: Element, prop: PropDef, tokens: Tokens): Detection {
     return candidates.length ? { candidates: candidates.map((t) => t.name), value, how: 'value' } : { value, how: 'none' };
   }
   const value = prop.read!(cs);
-  // 枠線が無い要素の枠線色は、継承した文字色が出ているだけなので「なし」とする
+  // Border color on an element without a border is just the inherited text color, so treat it as "none"
   if (prop.key === 'borderColor' && cs.borderTopWidth === '0px') return { value, how: 'zero' };
   const candidates = list.filter((t) => resolveToken(doc, prop.category, t) === value);
   const bySource = adapter().bySource(el, prop, candidates);
@@ -80,7 +80,7 @@ export function detectAll(el: Element, tokens: Tokens) {
 
 export function componentChain(el: Element): string[] {
   const key = Object.keys(el).find((k) => k.startsWith('__reactFiber$'));
-  // biome-ignore lint: React の内部構造を読む
+  // biome-ignore lint: reads React internals
   let fiber = key ? (el as any)[key] : null;
   // Server Components that rendered the element come first, then the client components above it
   const names: string[] = serverOwners(fiber).map((o) => o.name).filter((n) => n && !IGNORED_COMPONENTS.test(n));
@@ -97,8 +97,8 @@ export function componentChain(el: Element): string[] {
 }
 
 /**
- * 見た目が同じ要素を集める。class がスタイルを決めていることが多いので、タグと class の組が同じものを「似た要素」とする。
- * class の無い要素はそれだけでは決まらないので、親のタグと class も同じものに絞る。画面に出ていない要素は除く
+ * Collect elements that look the same. Classes usually define the style, so elements with the same tag and classes count as "similar".
+ * Elements without classes are ambiguous on their own, so also require the same parent tag and classes. Elements not rendered are excluded
  */
 export function similarTo(el: Element): Element[] {
   const sig = (x: Element | null) => (x ? `${x.tagName}|${[...x.classList].sort().join(' ')}` : '');
@@ -120,13 +120,13 @@ export function describeElement(el: Element): ElementInfo {
     tag: el.tagName.toLowerCase(),
     components: componentChain(el),
     text,
-    // スタイルの手がかり（Tailwind ならトークンを使った class、素の CSS なら当たっているセレクタ）
+    // Style hints (classes using tokens for Tailwind, matching selectors for plain CSS)
     tokenClasses: adapter().hints(el),
     marks,
   };
 }
 
-// ---------------------------------------------------------------- プレビュー
+// ---------------------------------------------------------------- preview
 const originals = new WeakMap<Element, Map<string, [string, string]>>();
 
 function setInline(el: Element, css: string, value: string) {
@@ -151,7 +151,7 @@ export function restoreInline(el: Element, cssList: string[]) {
   }
 }
 
-// 差し替えた値へ補間して動かす。差し替え中のプロパティだけを対象にし、全部戻したら元の transition に戻す
+// Animate toward the swapped value. Only targets properties being swapped, and restores the original transition once everything is reverted
 function updateTransition(el: Element) {
   const keys = [...(originals.get(el)?.keys() ?? [])].filter((k) => k !== 'transition');
   const reduce = el.ownerDocument.defaultView?.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -159,7 +159,7 @@ function updateTransition(el: Element) {
   else setInline(el, 'transition', keys.map((k) => `${k} 120ms ease-out`).join(', '));
 }
 
-/** トークンを介さない値（並びの設定・order）をそのまま当てる。undefined なら元に戻す */
+/** Apply values that bypass tokens (layout settings, order) directly. undefined restores the original */
 export function previewRaw(el: Element, css: string, value: string | undefined) {
   restoreInline(el, [css]);
   if (value !== undefined) setInline(el, css, value);

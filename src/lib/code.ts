@@ -1,4 +1,4 @@
-// コードピーク用。選んだ要素の React の部品の連なり、ソースの抜粋、部品の使用箇所、変更の行き先を集める
+// For code peek. Collects the selected element's React component chain, source excerpts, component usages and where changes land
 import type { HighlighterCore } from 'shiki/core';
 import type { Dict } from '../i18n';
 import { IGNORED_COMPONENTS } from './inspect';
@@ -10,24 +10,24 @@ import type { Change, PropKey } from './types';
 
 export type ReactPart = {
   name: string;
-  /** Props の短い表示（children は除く） */
+  /** Short display of props (excluding children) */
   props: [string, string][];
-  /** この部品を JSX で書いた場所のスタック */
+  /** Stack of where this component was written in JSX */
   stack: string | undefined;
 };
 
-// biome-ignore lint: React の内部構造を読む
+// biome-ignore lint: reads React internals
 const nameOf = (type: any): string | undefined =>
   typeof type === 'string' ? undefined : (type?.displayName ?? type?.name ?? type?.render?.displayName ?? type?.render?.name ?? type?.type?.displayName ?? type?.type?.name);
 
-/** 値を1行の短い文字列にする。関数は ƒ、要素は <Name…>、配列とオブジェクトは中身を縮める */
+/** Turn a value into a short one-line string. Functions become ƒ, elements <Name…>, arrays and objects are abbreviated */
 export function preview(v: unknown, depth = 0): string {
   if (v === null || v === undefined) return String(v);
   if (typeof v === 'string') return JSON.stringify(v.length > 40 ? `${v.slice(0, 40)}…` : v);
   if (typeof v === 'number' || typeof v === 'boolean') return String(v);
   if (typeof v === 'function') return `ƒ ${v.name || ''}`.trim();
   if (typeof v === 'object' && '$$typeof' in v) {
-    // biome-ignore lint: React 要素
+    // biome-ignore lint: React element
     const type = (v as any).type;
     return `<${typeof type === 'string' ? type : (nameOf(type) ?? '…')} />`;
   }
@@ -43,7 +43,7 @@ export function preview(v: unknown, depth = 0): string {
   return String(v);
 }
 
-/** 要素から上へたどった部品の連なり（近い順） */
+/** Component chain walked up from the element (nearest first) */
 export function reactChain(el: Element, max = 8): ReactPart[] {
   const host = fiberOf(el);
   const out: ReactPart[] = serverOwners(host)
@@ -70,8 +70,8 @@ export function reactChain(el: Element, max = 8): ReactPart[] {
 }
 
 /**
- * ライブラリ（node_modules）の中で作られた要素は書いた場所が取れないので、上の部品へさかのぼり、
- * src の中で最初に JSX を書いた部品とその場所を返す
+ * Elements created inside a library (node_modules) have no source location, so walk up the components and
+ * return the first component whose JSX is written in src, with its location
  */
 export async function nearestSrc(el: Element): Promise<{ name: string; loc: string } | null> {
   for (const part of reactChain(el, 12)) {
@@ -81,7 +81,7 @@ export async function nearestSrc(el: Element): Promise<{ name: string; loc: stri
   return null;
 }
 
-/** 'src/a.tsx:42' → ファイルと行 */
+/** 'src/a.tsx:42' → file and line */
 export const splitLoc = (loc: string) => {
   const m = loc.match(/^(.+):(\d+)$/);
   return m ? { file: m[1], line: Number(m[2]) } : null;
@@ -120,8 +120,8 @@ export function fetchUsages(name: string): Promise<Usages | null> {
 }
 
 /**
- * NavigationMenuTrigger のような名前は、コードでは <NavigationMenu.Trigger> と書かれることが多い。
- * そのままで見つからなければ、大文字の切れ目にドットを入れた書き方も試し、見つかった書き方の名前を返す
+ * Names like NavigationMenuTrigger are often written as <NavigationMenu.Trigger> in code.
+ * If the name as is is not found, also try with dots at the capital-letter boundaries, and return the spelling that was found
  */
 export async function findUsages(name: string): Promise<{ name: string; usages: Usages } | null> {
   const splits = [...name.matchAll(/(?<=[a-z])(?=[A-Z])/g)].map((m) => `${name.slice(0, m.index)}.${name.slice(m.index)}`);
@@ -136,8 +136,8 @@ export async function findUsages(name: string): Promise<{ name: string; usages: 
 }
 
 /**
- * ソースの各行に、変更の行き先を注記する。変更前のトークン名（--space-4 など）や元の文字が書かれた行に
- * 「内側 上 → --space-6」のように付ける。行番号 → 注記
+ * Annotate source lines with where changes land. Lines containing the original token name (--space-4 etc.) or original text
+ * get notes like "padding top → --space-6". Line number → note
  */
 export function annotate(snippet: Snippet, change: Change | undefined, t: Dict): Map<number, string[]> {
   const notes = new Map<number, string[]>();
@@ -163,7 +163,7 @@ export function annotate(snippet: Snippet, change: Change | undefined, t: Dict):
   return notes;
 }
 
-/** 差し込んだストーリーを JSX で書いたときの形 */
+/** How an inserted story would look written as JSX */
 export function storyJsx(insert: NonNullable<Change['insert']>): string {
   const name = insert.title.split('/').at(-1) ?? insert.name;
   const attrs = Object.entries(insert.args ?? {})
@@ -176,7 +176,7 @@ export function storyJsx(insert: NonNullable<Change['insert']>): string {
 
 let highlighter: Promise<HighlighterCore> | null = null;
 
-/** ソースの抜粋を色分けする。ライト・ダークの両方の色を CSS 変数（--shiki-light / --shiki-dark）で持たせる */
+/** Syntax-highlight a source excerpt. Both light and dark colors are carried as CSS variables (--shiki-light / --shiki-dark) */
 export async function highlight(lines: string[]): Promise<{ content: string; style: Record<string, string> }[][]> {
   highlighter ??= Promise.all([import('shiki/core'), import('shiki/engine/javascript')]).then(([{ createHighlighterCore }, { createJavaScriptRegexEngine }]) =>
     createHighlighterCore({
@@ -194,8 +194,8 @@ export async function highlight(lines: string[]): Promise<{ content: string; sty
 }
 
 /**
- * 要素を書いた場所。React なら JSX を書いた場所とその部品を使っている場所、
- * React で無いとき（素の HTML など）は、要素に当たっている一番後ろの CSS の規則の場所を self にする
+ * Where the element is written. For React, where the JSX is written and where its component is used.
+ * Without React (plain HTML etc.), self is the location of the last CSS rule matching the element
  */
 export async function locate(el: Element): Promise<{ self: string | null; usage: string | null }> {
   const react = await sourceOf(el);

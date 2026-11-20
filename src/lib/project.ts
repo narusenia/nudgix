@@ -1,11 +1,11 @@
-// 対象のプロジェクトのフォルダ。ソースマップや CSS ファイルの絶対パスを、プロジェクトからの相対パスに直すのに使う
+// The target project's folder. Used to turn absolute paths from source maps and CSS files into project-relative paths
 let projectDir = '';
 export const getProjectDir = () => projectDir;
 export const setProjectDir = (dir: string) => {
   projectDir = dir;
 };
 
-/** 絶対パスやバンドラーの URL を、プロジェクトからの相対パスにする。外のファイル（node_modules など）は null */
+/** Turn an absolute path or bundler URL into a project-relative path. null for files outside it (node_modules etc.) */
 export function relativeToProject(file: string): string | null {
   const p = decodeURI(file.replace(/^file:\/\//, '')).replace(/[?#].*$/, '');
   if (p.includes('/node_modules/')) return null;

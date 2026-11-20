@@ -1,4 +1,4 @@
-// 選んだ要素の上に出すハンドル。ドラッグ・ホイールで、一番近いトークンに吸い付きながら値を変える
+// Handles shown over the selected element. Dragging or scrolling changes the value, snapping to the nearest token
 import { GripVertical, Group, Move, SquareRoundCorner, Trash2 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import type { Dict } from '../i18n';
@@ -11,9 +11,9 @@ import s from './ui.module.css';
 
 type Axis = 'x' | 'y' | 'xy';
 type Spec = { id: string; keys: PropKey[]; pair?: PropKey[]; all?: PropKey[]; axis: Axis; sign: 1 | -1; left: number; top: number; shape: 'h' | 'v' | 'dot' | 'chip' | 'sq';
-  /** 余白と gap は、ハンドルではなく帯そのものをつかんで動かす */
+  /** Padding and gap are dragged by the band itself, not a handle */
   zone?: { left: number; top: number; width: number; height: number };
-  /** 値が 0 で帯が見えないとき。要素に乗せている間だけ破線で出す */
+  /** When the value is 0 and the band is invisible. Shown dashed only while hovering the element */
   zero?: boolean;
 };
 
@@ -22,13 +22,13 @@ type Props = {
   tokens: Tokens;
   onPreview: (keys: PropKey[], token: Token | undefined) => void;
   onCommit: (keys: PropKey[], name: string) => void;
-  /** 親の子の今の並び（並べ替え済みならその順） */
+  /** Current order of the parent's children (the reordered order if already reordered) */
   orderOf: (parent: Element) => Element[];
-  /** 自分を除いた兄弟の並びの index 番目へ動かす */
+  /** Move to index in the siblings' order, excluding itself */
   onMoveTo: (index: number) => void;
-  /** 別の親の、ref の直前へ移す（null なら末尾） */
+  /** Move into another parent, right before ref (end if null) */
   onMoveInto: (parent: Element, ref: Element | null) => void;
-  /** 見た目だけずらす */
+  /** Visual-only offset */
   onNudge: (dx: number, dy: number) => void;
   onRemove: () => void;
   onSimilar: () => void;
@@ -36,7 +36,7 @@ type Props = {
 
 type Step = { token: Token; px: number };
 
-/** px の小さい順。同じ値のトークンは先に出てきたものを残して1つにまとめる */
+/** Sorted by px ascending. Tokens with the same value collapse into one, keeping the first */
 function steps(doc: Document, tokens: Tokens, key: PropKey): Step[] {
   const prop = PROP_BY_KEY[key];
   const byPx = new Map<number, Step>();
@@ -52,19 +52,19 @@ function steps(doc: Document, tokens: Tokens, key: PropKey): Step[] {
 const PADS: PropKey[] = ['paddingTop', 'paddingRight', 'paddingBottom', 'paddingLeft'];
 const MARGINS: PropKey[] = ['marginTop', 'marginRight', 'marginBottom', 'marginLeft'];
 
-/** ⇧ で全方向、⌥ で向かい合う2辺、どちらも無ければその辺だけ */
+/** ⇧ moves all sides, ⌥ moves opposite sides, neither moves just that side */
 const keysOf = (spec: Spec, e: { shiftKey: boolean; altKey: boolean }) =>
   e.shiftKey && spec.all ? spec.all : e.altKey && spec.pair ? spec.pair : spec.keys;
 
 const kindOf = (spec: Spec) =>
   spec.keys[0].startsWith('padding') ? 'pad' : spec.keys[0].startsWith('margin') ? 'margin' : spec.id === 'w' || spec.id === 'h' ? 'size' : null;
 
-/** 角丸のハンドルの真ん中に置くアイコン。幅・高さは Figma と同じ白い四角なのでアイコンなし */
+/** Icon in the middle of a radius handle. Width/height use a plain white square like Figma, so no icon */
 function iconOf(spec: Spec) {
   return spec.id === 'rad' ? <SquareRoundCorner size={9} strokeWidth={2.75} aria-hidden /> : null;
 }
 
-/** ⇧・⌥ で一緒に動く辺の名前 */
+/** Names of the sides that move together with ⇧ or ⌥ */
 function withLabel(keys: PropKey[] | undefined, t: Dict) {
   if (!keys) return null;
   if (keys.length > 2) return t.handleWith.all;
@@ -74,7 +74,7 @@ function withLabel(keys: PropKey[] | undefined, t: Dict) {
 const nearest = (list: Step[], px: number) =>
   list.reduce((best, st, i) => (Math.abs(st.px - px) < Math.abs(list[best].px - px) ? i : best), 0);
 
-/** k は画面を寄せている拡大率。帯のつかめる厚みとハンドルのずらし幅は、見た目の px で決める */
+/** k is the zoom factor. Band grab thickness and handle offsets are set in on-screen px */
 function specsOf(el: Element, k: number): Spec[] {
   const cs = el.ownerDocument.defaultView!.getComputedStyle(el);
   const n = (v: string) => Number.parseFloat(v) || 0;
@@ -89,7 +89,7 @@ function specsOf(el: Element, k: number): Spec[] {
   const cx = (inL + inR) / 2;
   const cy = (inT + inB) / 2;
   const radius = Math.max(n(cs.borderTopLeftRadius), 8) * 0.6;
-  // 帯は余白が 0 でもつかめるよう、最低 6px（見た目の px）の厚みを持たせる
+  // Give bands at least 6px (on-screen) of thickness so they can be grabbed even at 0
   const min = 6 / k;
   const z = (v: number) => Math.max(v, min);
   const zero = (v: number) => v * k < 1;
@@ -100,25 +100,25 @@ function specsOf(el: Element, k: number): Spec[] {
   const MPAIR_X: PropKey[] = ['marginLeft', 'marginRight'];
   return [
     ...gapSpecs(el, cs, min, k),
-    // 内側の余白は、枠の内側の帯をつかんで動かす
+    // Padding is dragged by the band inside the frame
     { id: 'pt', keys: ['paddingTop'], pair: PAIR_Y, all: PADS, axis: 'y', sign: 1, left: cx, top: inT + pt, shape: 'h', zero: zero(pt), zone: { left: inL, top: inT, width: inR - inL, height: z(pt) } },
     { id: 'pb', keys: ['paddingBottom'], pair: PAIR_Y, all: PADS, axis: 'y', sign: -1, left: cx, top: inB - pb, shape: 'h', zero: zero(pb), zone: { left: inL, top: inB - z(pb), width: inR - inL, height: z(pb) } },
     { id: 'pl', keys: ['paddingLeft'], pair: PAIR_X, all: PADS, axis: 'x', sign: 1, left: inL + pl, top: cy, shape: 'v', zero: zero(pl), zone: { left: inL, top: inT + z(pt), width: z(pl), height: side } },
     { id: 'pr', keys: ['paddingRight'], pair: PAIR_X, all: PADS, axis: 'x', sign: -1, left: inR - pr, top: cy, shape: 'v', zero: zero(pr), zone: { left: inR - z(pr), top: inT + z(pt), width: z(pr), height: side } },
-    // 外側の余白は、枠の外の帯をつかんで動かす
+    // Margin is dragged by the band outside the frame
     { id: 'mt', keys: ['marginTop'], pair: MPAIR_Y, all: MARGINS, axis: 'y', sign: -1, left: cx, top: r.top - mt, shape: 'h', zero: zero(mt), zone: { left: r.left, top: r.top - z(mt), width: r.width, height: z(mt) } },
     { id: 'mb', keys: ['marginBottom'], pair: MPAIR_Y, all: MARGINS, axis: 'y', sign: 1, left: cx, top: r.bottom + mb, shape: 'h', zero: zero(mb), zone: { left: r.left, top: r.bottom, width: r.width, height: z(mb) } },
     { id: 'ml', keys: ['marginLeft'], pair: MPAIR_X, all: MARGINS, axis: 'x', sign: -1, left: r.left - ml, top: cy, shape: 'v', zero: zero(ml), zone: { left: r.left - z(ml), top: r.top, width: z(ml), height: r.height } },
     { id: 'mr', keys: ['marginRight'], pair: MPAIR_X, all: MARGINS, axis: 'x', sign: 1, left: r.right + mr, top: cy, shape: 'v', zero: zero(mr), zone: { left: r.right, top: r.top, width: z(mr), height: r.height } },
     { id: 'rad', keys: ['borderRadius'], axis: 'xy', sign: 1, left: r.left + radius, top: r.top + radius, shape: 'dot' },
-    // 幅と高さは Figma と同じく、枠の右辺と下辺の真ん中に置く白い四角
+    // Width and height are white squares at the middle of the right and bottom edges, like Figma
     { id: 'w', keys: ['width'], axis: 'x', sign: 1, left: r.right, top: cy, shape: 'sq' },
     { id: 'h', keys: ['height'], axis: 'y', sign: 1, left: cx, top: r.bottom, shape: 'sq' },
     { id: 'fs', keys: ['fontSize'], axis: 'y', sign: -1, left: r.right + 14 / k, top: r.top - 2 / k, shape: 'chip' },
   ];
 }
 
-/** flex・grid の子の間の帯。隣り合う子の隙間ごとに、つかむ所を置く */
+/** Bands between flex/grid children. Places a grab area in each gap between adjacent children */
 function gapSpecs(el: Element, cs: CSSStyleDeclaration, min: number, k: number): Spec[] {
   if (!/flex|grid/.test(cs.display)) return [];
   const kids = [...el.children]
@@ -149,7 +149,7 @@ export function Handles({ el, tokens, onPreview, onCommit, orderOf, onMoveTo, on
   const siblings = el.parentElement ? orderOf(el.parentElement) : [el];
   const t = useT();
   const [specs, setSpecs] = useState<Spec[]>([]);
-  // 寄せている拡大率。ハンドルなどは 1/k に縮めて、見た目の大きさを変えない
+  // Zoom factor. Handles etc. are scaled by 1/k so their on-screen size stays the same
   const [k, setK] = useState(1);
   const [drag, setDrag] = useState<{
     spec: Spec;
@@ -158,7 +158,7 @@ export function Handles({ el, tokens, onPreview, onCommit, orderOf, onMoveTo, on
     start: number;
     from: Step;
     idx: number;
-    /** 幅・高さを ⇧ なしで動かしているときの、吸い付かせない値 */
+    /** Unsnapped value while dragging width/height without ⇧ */
     free?: Step;
     x: number;
     y: number;
@@ -166,7 +166,7 @@ export function Handles({ el, tokens, onPreview, onCommit, orderOf, onMoveTo, on
   } | null>(null);
   const rootRef = useRef<HTMLDivElement>(null);
   const [hover, setHover] = useState<string | null>(null);
-  // 選んだ要素（と周りの余白）にカーソルが乗っているか。値が 0 の帯を破線で出すのに使う
+  // Whether the cursor is over the selected element (and its margin). Used to show 0-value bands dashed
   const [near, setNear] = useState(false);
   useEffect(() => {
     const doc = el.ownerDocument;
@@ -186,7 +186,7 @@ export function Handles({ el, tokens, onPreview, onCommit, orderOf, onMoveTo, on
   const [moving, setMoving] = useState<{ ghost: Box; line: Box | null; target: Box | null; free: boolean } | null>(null);
   const [mods, setMods] = useState({ shiftKey: false, altKey: false, freeKey: false });
 
-  // ⇧・⌥ を押している間、一緒に動くハンドルを光らせる。iframe にフォーカスがあるときのキーも拾う
+  // Highlight handles that move together while ⇧/⌥ is held. Also catches keys while the iframe has focus
   useEffect(() => {
     const docs = [document, el.ownerDocument];
     const on = (e: KeyboardEvent) => {
@@ -208,7 +208,7 @@ export function Handles({ el, tokens, onPreview, onCommit, orderOf, onMoveTo, on
     };
   }, [el]);
 
-  // 要素の位置と余白は、プレビューやスクロールで変わるので毎フレーム追う
+  // The element's position and spacing change with preview and scroll, so track them every frame
   useEffect(() => {
     let raf = 0;
     let last = '';
@@ -229,7 +229,7 @@ export function Handles({ el, tokens, onPreview, onCommit, orderOf, onMoveTo, on
     return () => cancelAnimationFrame(raf);
   }, [el]);
 
-  // 画面を寄せているときは、マウスの移動量を拡大率で割って iframe の px に直す
+  // When zoomed, divide mouse movement by the zoom factor to get iframe px
   const scale = () => {
     const wrap = rootRef.current?.parentElement?.parentElement;
     return wrap ? wrap.getBoundingClientRect().width / wrap.offsetWidth || 1 : 1;
@@ -243,8 +243,8 @@ export function Handles({ el, tokens, onPreview, onCommit, orderOf, onMoveTo, on
     } catch {}
     const keys = keysOf(spec, e);
     const list = steps(el.ownerDocument, tokens, keys[0]);
-    // 幅・高さは 1px 単位で自由に動かし、⇧ を押している間だけトークンに吸い付かせる。
-    // 余白・角丸などはトークンに吸い付かせ、⌘（Windows は Ctrl）を押している間だけ自由に動かす
+    // Width and height move freely in 1px steps and snap to tokens only while ⇧ is held.
+    // Spacing, radius and the like snap to tokens and move freely only while ⌘ (Ctrl on Windows) is held
     const sizing = kindOf(spec) === 'size';
     const freeNow = (ev: { shiftKey: boolean; metaKey: boolean; ctrlKey: boolean }) =>
       !list.length || (sizing ? !ev.shiftKey : ev.metaKey || ev.ctrlKey);
@@ -278,13 +278,13 @@ export function Handles({ el, tokens, onPreview, onCommit, orderOf, onMoveTo, on
         return;
       }
       if (free) {
-        // 自由に動かすのをやめた瞬間は、今の位置に一番近いトークンへ移る
+        // The moment free movement stops, jump to the token nearest the current position
         free = undefined;
         idx = nearest(list, target);
         show(list[idx]);
       }
       const cand = nearest(list, target);
-      // 境目で値が行ったり来たりしないよう、隣の値との中間を 3px 越えるまで今の値に粘る
+      // To avoid flickering at the boundary, stick to the current value until 3px past the midpoint with the next one
       if (cand !== idx && Math.abs(target - list[idx].px) > Math.abs(list[cand].px - list[idx].px) / 2 + 3) {
         idx = cand;
         show(list[idx]);
@@ -303,7 +303,7 @@ export function Handles({ el, tokens, onPreview, onCommit, orderOf, onMoveTo, on
     window.addEventListener('pointerup', up);
   };
 
-  // つまみをドラッグして、乗せた所の子の間に落とすとそこへ移す。⌘ を押している間は見た目だけ自由にずらす
+  // Drag the grip and drop between children to move it there. While ⌘ is held, it just offsets visually
   const beginMove = (e: React.PointerEvent, freeOnly = false) => {
     e.preventDefault();
     e.stopPropagation();
@@ -348,7 +348,7 @@ export function Handles({ el, tokens, onPreview, onCommit, orderOf, onMoveTo, on
       if (!drop) return;
       const { parent, kids, index } = drop;
       if (parent === home) {
-        // 見えている兄弟の位置から、見えない兄弟も含めた並びの位置に直す
+        // Convert the position among visible siblings to a position in the full order, including hidden siblings
         const rest = siblings.filter((c) => c !== el);
         onMoveTo(index >= kids.length ? rest.indexOf(kids[kids.length - 1]) + 1 : rest.indexOf(kids[index]));
       } else onMoveInto(parent, kids[index] ?? null);
@@ -379,7 +379,7 @@ export function Handles({ el, tokens, onPreview, onCommit, orderOf, onMoveTo, on
     return () => cancelAnimationFrame(raf);
   }, [el]);
 
-  // ホイールで1段ずつ送る
+  // Step one notch per wheel tick
   const wheel = (spec: Spec, e: React.WheelEvent) => {
     e.preventDefault();
     const keys = keysOf(spec, e);
@@ -488,7 +488,7 @@ export function Handles({ el, tokens, onPreview, onCommit, orderOf, onMoveTo, on
           {moving.line ? <div className={s.moveLine} style={moving.line} /> : null}
         </>
       ) : null}
-      {/* Figma と同じく、枠の下に今の幅 × 高さを出す */}
+      {/* Show the current width × height below the frame, like Figma */}
       {grip ? (
         <div className={s.sizeBadge} style={{ left: grip.left, top: grip.bottom + 6 / k }}>
           {Math.round(grip.width)} × {Math.round(grip.height)}
@@ -497,7 +497,7 @@ export function Handles({ el, tokens, onPreview, onCommit, orderOf, onMoveTo, on
       {hovered && !drag ? <HandleHint spec={hovered} mods={mods} t={t} k={k} /> : null}
       {drag && active ? (
         <>
-          {/* iframe の上に入ると移動と離した操作を iframe が受け取ってしまうので、ドラッグ中だけ全体を覆う */}
+          {/* Over the iframe, it would receive the move and release events, so cover everything only while dragging */}
           <div className={s.dragShield} style={{ cursor: drag.spec.axis === 'x' ? 'ew-resize' : drag.spec.axis === 'y' ? 'ns-resize' : 'nwse-resize' }} />
           {(drag.free ? [] : drag.list)
             .filter((st) => Math.abs(st.px - drag.start) <= 160)
@@ -526,8 +526,8 @@ export function Handles({ el, tokens, onPreview, onCommit, orderOf, onMoveTo, on
   );
 }
 
-/** ハンドルに乗せたときの名札。外側か内側かと、⇧・⌥ で何が一緒に動くか */
-// Mac は ⌘、ほかは Ctrl。どちらを押しても自由に動かせる
+/** Label shown when hovering a handle: outer or inner, and what moves together with ⇧/⌥ */
+// ⌘ on Mac, Ctrl elsewhere. Either one enables free movement
 const FREE_KEY = /Mac|iPhone|iPad/.test(navigator.platform) ? '⌘' : 'Ctrl';
 
 function HandleHint({ spec, mods, t, k }: { spec: Spec; mods: { shiftKey: boolean; altKey: boolean; freeKey: boolean }; t: Dict; k: number }) {
@@ -548,7 +548,7 @@ function HandleHint({ spec, mods, t, k }: { spec: Spec; mods: { shiftKey: boolea
 
 type DragInfo = { spec: Spec; start: number; rect: { left: number; top: number; width: number; height: number } };
 
-/** ドラッグ中、元の形を破線で画面に残す。角丸は元の角、余白は元の位置の線 */
+/** While dragging, leave the original shape dashed on the page. Original corner for radius, original edge line for spacing */
 function Ghost({ drag }: { drag: DragInfo }) {
   const { spec, rect, start } = drag;
   if (spec.shape === 'dot') return <div className={s.ghostShape} style={{ ...rect, borderRadius: start }} />;
@@ -557,7 +557,7 @@ function Ghost({ drag }: { drag: DragInfo }) {
   return null;
 }
 
-/** 吹き出しの中の小さな比較。元を破線、新しい値を実線で重ねる */
+/** Small comparison inside the tooltip. The original is dashed, the new value solid, overlaid */
 function MiniCompare({ kind, from, to }: { kind: 'radius' | 'space' | 'text'; from: number; to: number }) {
   if (kind === 'radius') {
     const r = (v: number) => Math.min(v * 2, 36);

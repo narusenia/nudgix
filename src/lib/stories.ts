@@ -1,4 +1,4 @@
-// プロジェクトの Storybook。エディタのサーバーが Storybook のパスだけを中継するので、同じオリジンで読める
+// The project's Storybook. The editor server proxies only Storybook paths, so it can be read from the same origin
 export type Story = { id: string; title: string; name: string; importPath: string };
 
 export async function loadStories(): Promise<Story[]> {
@@ -13,8 +13,8 @@ export async function loadStories(): Promise<Story[]> {
 export const storyUrl = (id: string) => `/iframe.html?id=${encodeURIComponent(id)}&viewMode=story`;
 
 /**
- * 描画済みのストーリーから、画面に差し込む HTML を取る。
- * 画面いっぱいの地（デコレーター）は外し、中身が1つならその要素、複数なら折り返す横並びで包む
+ * Get the HTML to insert into the page from a rendered story.
+ * Strips the full-screen backdrop (decorators); returns the element if there is one, otherwise wraps several in a wrapping row
  */
 export function captureStory(doc: Document): { html: string; left: number; top: number; width: number; height: number } | null {
   const win = doc.defaultView;
@@ -25,7 +25,7 @@ export function captureStory(doc: Document): { html: string; left: number; top: 
   while (cur.children.length === 1 && isBackdrop(cur.firstElementChild!)) cur = cur.firstElementChild!;
   if (!cur.children.length) return null;
   const one = cur.children.length === 1 ? cur.firstElementChild! : null;
-  // 横幅いっぱいの入れ物（ボタンを並べる行など）は、中までたどって中身の範囲で測る
+  // Full-width containers (like a row of buttons) are measured by walking in to the content's extent
   const measure = (el: Element, depth: number): DOMRect[] => {
     const q = el.getBoundingClientRect();
     if (depth < 4 && el.children.length && q.width >= win.innerWidth * 0.8) return [...el.children].flatMap((c) => measure(c, depth + 1));
@@ -44,7 +44,7 @@ export function captureStory(doc: Document): { html: string; left: number; top: 
   return { html, left: r.left, top: r.top, width: Math.min(r.width, 800), height: Math.min(r.height, 600) };
 }
 
-// ---------------------------------------------------------------- Props（Storybook の args）
+// ---------------------------------------------------------------- props (Storybook args)
 export type ArgControl = { kind: 'select' | 'boolean' | 'text' | 'number'; options?: string[] };
 export type Args = Record<string, string | number | boolean>;
 
@@ -56,7 +56,7 @@ type SbWindow = Window & {
   __STORYBOOK_ADDONS_CHANNEL__?: { on: (e: string, f: () => void) => void; off: (e: string, f: () => void) => void; emit: (e: string, p: unknown) => void };
 };
 
-/** 描画中のストーリーの args と、画面で変えられる args の種類。関数やオブジェクトの args は扱わない */
+/** Args of the rendering story and the kinds of args editable on the page. Function and object args are not handled */
 export function storyMeta(win: Window | null): { args: Args; argTypes: Record<string, ArgControl> } | null {
   const story = (win as SbWindow | null)?.__STORYBOOK_PREVIEW__?.currentRender?.story;
   if (!story) return null;
@@ -75,7 +75,7 @@ export function storyMeta(win: Window | null): { args: Args; argTypes: Record<st
   return { args, argTypes };
 }
 
-// args を変えて描き直すための、見えない Storybook。ストーリーごとに1つ作って使い回す
+// A hidden Storybook for rerendering with new args. One per story, reused
 const renderers = new Map<string, Promise<HTMLIFrameElement>>();
 
 const waitFor = async <T>(f: () => T | null, ms = 10_000): Promise<T | null> => {
@@ -103,7 +103,7 @@ function rendererOf(id: string) {
   return p;
 }
 
-/** args を当てて描き直し、差し込む HTML を取る */
+/** Apply args, rerender and get the HTML to insert */
 export async function renderStory(id: string, args: Args) {
   const f = await rendererOf(id);
   const doc = f.contentDocument;
@@ -124,7 +124,7 @@ export async function renderStory(id: string, args: Args) {
   const first = rendered(3000);
   channel.emit('updateStoryArgs', { storyId: id, updatedArgs: args });
   await first;
-  // 続けて描き直すと、前の描き直しの完了通知を先に受け取ることがある。中身が変わっていなければ次の通知まで待つ
+  // Rerendering back to back can deliver the previous render's done event first. If the content has not changed, wait for the next one
   if (captureStory(doc)?.html === before) await rendered(1000);
   return captureStory(doc);
 }

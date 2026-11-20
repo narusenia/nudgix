@@ -47,7 +47,7 @@ export function PropertyPanel(props: Props) {
   const t = useT();
   const { info } = selected;
   const doc = selected.el.ownerDocument;
-  // 別の要素を選んだら先頭から見せる。前の要素のスクロール位置のままだと、どの項目か分かりにくい
+  // When another element is selected, scroll back to the top. Keeping the previous scroll position makes it hard to tell which field is which
   const scrollRef = useRef<HTMLElement>(null);
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: 0 });
@@ -66,7 +66,7 @@ export function PropertyPanel(props: Props) {
     } catch {}
   };
 
-  /** 今の値（確定済みならそのトークンの値、未確定なら選んだ時点の値） */
+  /** Current value (the token's value if committed, otherwise the value at selection time) */
   const currentOf = (prop: PropDef) => {
     const committed = change?.props[prop.key];
     const token = tokenOf(tokens, prop.category, committed);
@@ -92,7 +92,7 @@ export function PropertyPanel(props: Props) {
     const valueNode = (
       <span className={committed ? s.propValueChanged : s.propValue}>
         <Specimen category={prop.category} value={value} />
-        {/* 2列の狭い行では「トークン外」を省いて値だけ出す */}
+        {/* In narrow two-column rows, drop the "off-token" label and show only the value */}
         <span className={s.ellipsis}>{committed ?? (compact && selected.baseline[prop.key].how === 'none' ? displayValue(prop.category, value) : d.text)}</span>
       </span>
     );
@@ -138,7 +138,7 @@ export function PropertyPanel(props: Props) {
       {change?.insert?.argTypes && Object.keys(change.insert.argTypes).length ? (
         <StoryProps args={change.insert.args ?? {}} argTypes={change.insert.argTypes} onChange={props.onStoryArg} />
       ) : null}
-      {/* Figma の右パネルと同じく、並び → 余白 → サイズ → 見た目 → 文字 の順に、線で区切って並べる */}
+      {/* Like Figma's right panel, list layout → spacing → size → appearance → text, separated by lines */}
       <PanelSection title={t.layout}>
         <LayoutSection el={selected.el} position={props.position} onLayout={props.onLayout} onMove={props.onMove} />
       </PanelSection>
@@ -162,7 +162,7 @@ export function PropertyPanel(props: Props) {
   );
 }
 
-// ---------------------------------------------------------------- 差し込んだストーリーの Props（Storybook の args）
+// ---------------------------------------------------------------- props of inserted stories (Storybook args)
 type ArgTypes = NonNullable<NonNullable<Change['insert']>['argTypes']>;
 
 function StoryProps({ args, argTypes, onChange }: { args: Record<string, string | number | boolean>; argTypes: ArgTypes; onChange: Props['onStoryArg'] }) {
@@ -206,7 +206,7 @@ function StoryProps({ args, argTypes, onChange }: { args: Record<string, string 
   );
 }
 
-/** 文字と数値は、打ち終えて Enter か欄を離れたときに描き直す（1文字ごとに描き直すと重い） */
+/** Text and numbers rerender on Enter or blur (rerendering per keystroke is heavy) */
 function ArgText({ value, number, onCommit }: { value: string; number: boolean; onCommit: (v: string) => void }) {
   const [draft, setDraft] = useState(value);
   useEffect(() => setDraft(value), [value]);
@@ -223,10 +223,10 @@ function ArgText({ value, number, onCommit }: { value: string; number: boolean; 
   );
 }
 
-// ---------------------------------------------------------------- 並び：Figma のオートレイアウトのように、向き・揃えのパッド・両端・伸ばす
+// ---------------------------------------------------------------- layout: like Figma auto layout, with direction, alignment pad, space-between and stretch
 const POS = ['flex-start', 'center', 'flex-end'] as const;
 
-/** 計算値を flex の言い方に寄せる */
+/** Normalize computed values to flex terms */
 function norm(v: string, fallback: string) {
   if (v === 'normal' || v === '') return fallback;
   if (v === 'start' || v === 'left') return 'flex-start';
@@ -251,7 +251,7 @@ function LayoutSection({ el, position, onLayout, onMove }: { el: Element; positi
     else onLayout({ flexDirection: v, ...(wrap ? { flexWrap: 'nowrap' } : {}) });
   };
 
-  // パッドは横が x、縦が y。横並びなら x が詰め方、縦並びなら x が揃え
+  // The pad's horizontal axis is x and vertical is y. In a row, x is justify; in a column, x is align
   const cell = (x: number, y: number) => {
     const main = POS[row ? x : y];
     const cross = POS[row ? y : x];
@@ -325,14 +325,14 @@ function LayoutSection({ el, position, onLayout, onMove }: { el: Element; positi
   );
 }
 
-// ---------------------------------------------------------------- 余白：DevTools / Figma のボックスモデル図
+// ---------------------------------------------------------------- spacing: box model diagram like DevTools / Figma
 function BoxModel({ selected, change, openKey, onToggle }: { selected: Selected; change: Change | undefined; openKey: PropKey | null; onToggle: (key: PropKey) => void }) {
   const t = useT();
   const cell = (key: PropKey) => {
     const committed = change?.props[key];
     const d = selected.baseline[key];
     const full = committed ?? describe(d, t, 'spacing').text;
-    // 図の中は狭いので、トークン名の最後の区切り（--space-4 なら 4）だけを出す
+    // The diagram is cramped, so show only the last segment of the token name (4 for --space-4)
     const tail = (name: string) => name.replace(/^--/, '').split(/[-.]/).at(-1) || name;
     const short = committed ? tail(committed) : d.how === 'zero' ? '–' : d.how === 'class' ? tail(d.name) : (px(d.value) ?? '?').toString();
     return (
@@ -369,7 +369,7 @@ function BoxModel({ selected, change, openKey, onToggle }: { selected: Selected;
   );
 }
 
-// ---------------------------------------------------------------- トークン一覧（大きい見本とカーソルの下の比較付き）
+// ---------------------------------------------------------------- token list (with a large sample and a comparison under the cursor)
 type ListProps = {
   prop: PropDef;
   doc: Document;
@@ -396,14 +396,14 @@ function TokenList({ prop, doc, list, current, onPreview, onRestore, onCommit }:
   const show = (token: Token | undefined, at?: HTMLElement) => {
     setHovered(token ?? null);
     onPreview(token);
-    // キーボードで送ったときは、カーソルの代わりに行の下に出す
+    // When stepping with the keyboard, show it below the row instead of at the cursor
     if (at) {
       const r = at.getBoundingClientRect();
       setCursor({ x: r.left + 24, y: r.bottom - 6 });
     }
   };
 
-  // ↑↓で候補を送ると、フォーカスした候補がすぐ画面に反映される
+  // Stepping through options with ↑↓ applies the focused option to the page immediately
   const onKeyDown = (e: React.KeyboardEvent) => {
     if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
     e.preventDefault();
@@ -414,7 +414,7 @@ function TokenList({ prop, doc, list, current, onPreview, onRestore, onCommit }:
     next?.scrollIntoView({ block: 'nearest' });
   };
 
-  // アダプターが見出し（group）を付けたトークンは、見出しごとに分けて並べる
+  // Tokens the adapter gave a group heading are listed under each heading
   const groups = new Map<string, Token[]>();
   for (const x of list) groups.set(x.group ?? '', [...(groups.get(x.group ?? '') ?? []), x]);
   const hoveredValue = hovered ? resolveToken(doc, prop.category, hovered) : undefined;
@@ -462,7 +462,7 @@ function TokenList({ prop, doc, list, current, onPreview, onRestore, onCommit }:
                       <Specimen category={prop.category} value={value} />
                     </span>
                     <span className={s.tokenName}>{token.name}</span>
-                    {/* 影の値は長く名前が読めなくなるので、行には出さない（大きい見本とカーソルの横に出る） */}
+                    {/* Shadow values are long and crowd out the name, so leave them off the row (they appear in the large sample and next to the cursor) */}
                     {prop.category === 'shadows' ? null : <span className={s.tokenValue}>{displayValue(prop.category, value)}</span>}
                     <span className={s.tokenCheck}>{active ? <Check /> : null}</span>
                   </button>
@@ -474,7 +474,7 @@ function TokenList({ prop, doc, list, current, onPreview, onRestore, onCommit }:
       {hovered && cursor ? (
         <div
           className={s.cursorTip}
-          // 画面の右に寄っているときは、はみ出さないようカーソルの左に出す
+          // Near the right edge, show it left of the cursor so it does not overflow
           style={cursor.x > innerWidth - 380 ? { right: innerWidth - cursor.x + 14, top: cursor.y + 18 } : { left: cursor.x + 14, top: cursor.y + 18 }}
         >
           <span className={s.cursorTipLabel}>{t.props[prop.key]}</span>
@@ -490,7 +490,7 @@ function TokenList({ prop, doc, list, current, onPreview, onRestore, onCommit }:
   );
 }
 
-/** トークン外の値を直接入れる欄。打つたびに当てられる値なら画面に当て、Enter で確定する */
+/** Field for entering an off-token value directly. Applies to the page on each keystroke when valid, commits on Enter */
 function RawInput({ prop, committed, onPreview, onRestore, onCommit }: { prop: PropDef; committed: string | undefined; onPreview: (value: string | null) => void; onRestore: () => void; onCommit: (name: string) => void }) {
   const t = useT();
   const [text, setText] = useState(committed && tokenOf(null, prop.category, committed)?.raw ? committed : '');
@@ -526,7 +526,7 @@ const SIZE_KEYS: PropKey[] = ['width', 'height'];
 const APPEARANCE_KEYS: PropKey[] = ['backgroundColor', 'borderColor', 'borderRadius', 'boxShadow'];
 const TEXT_KEYS: PropKey[] = ['textStyle', 'fontSize', 'fontWeight', 'color'];
 
-/** 線で区切ったパネルの節。見出しは本文と同じ濃さで、節の頭に置く */
+/** Panel section separated by a line. The heading uses the body text weight and sits at the top of the section */
 function PanelSection({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section className={s.pSection}>
@@ -538,7 +538,7 @@ function PanelSection({ title, children }: { title: string; children: React.Reac
 
 const RAW_EXAMPLE: Partial<Record<Category, string>> = { colors: '#1e40af', fontWeights: '600', shadows: '0 2px 8px rgb(0 0 0 / 0.2)', sizes: '240px' };
 
-// ---------------------------------------------------------------- 大きい見本。今の値を破線で重ねて差を見せる
+// ---------------------------------------------------------------- large sample, with the current value dashed on top to show the difference
 function BigSpecimen({ category, current, candidate, name, delta }: { category: Category; current: string; candidate: string; name: string; delta: string }) {
   const labels = useT();
   const cur = px(current) ?? 0;
@@ -553,7 +553,7 @@ function BigSpecimen({ category, current, candidate, name, delta }: { category: 
       </>
     );
   } else if (category === 'spacing' || category === 'sizes') {
-    // 小さい値は3倍で見やすくし、大きい値は2本の比が分かるよう、長い方が220pxに収まる倍率で縮める
+    // Small values are shown at 3x for readability; large values are scaled so the longer of the two fits in 220px, keeping their ratio visible
     const k = Math.min(3, 220 / Math.max(cur, cand, 1));
     const w = (v: number) => v * k;
     shape = (
@@ -563,7 +563,7 @@ function BigSpecimen({ category, current, candidate, name, delta }: { category: 
       </div>
     );
   } else if (category === 'shadows') {
-    // 影は明るい面の上で見る前提の値なので、テーマに関わらず明るい台に置く
+    // Shadow values assume a light surface, so place them on a light base regardless of theme
     shape = (
       <div className={s.bigShadowStage}>
         <span className={s.bigShadowCard} style={{ boxShadow: current === 'none' ? undefined : current }}>

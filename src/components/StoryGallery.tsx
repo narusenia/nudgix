@@ -1,4 +1,4 @@
-// 右端から出す Storybook のギャラリー。カードを画面へドラッグすると、そのストーリーの見た目を差し込む
+// Storybook gallery that slides in from the right. Dragging a card onto the page inserts that story's markup
 import { ChevronLeft, ChevronRight, Copy, Search } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useT } from '../i18n';
@@ -12,11 +12,11 @@ type Props = {
   open: boolean;
   onToggle: () => void;
   storybookUp: boolean;
-  /** ドラッグ中のカーソル（エディタの画面の座標）。null で終わり（drop が true なら落とした） */
+  /** Cursor while dragging (editor screen coordinates). null ends the drag (drop is true if it was dropped) */
   onDrag: (story: Story, captured: Captured, at: { x: number; y: number } | null, drop: boolean) => void;
 };
 
-// 部品のストーリーを先に出す
+// Component stories first
 const ORDER = ['Design System', 'Common', 'UI', 'ui', 'Domain', 'domain', 'Case', 'case'];
 const rank = (title: string) => {
   const i = ORDER.indexOf(title.split('/')[0]);
@@ -94,7 +94,7 @@ export function StoryGallery({ open, onToggle, storybookUp, onDrag }: Props) {
 
 const THUMB = { width: 800, height: 500, boxW: 152, boxH: 95, pad: 8 };
 
-/** カードの枠に中身が収まるよう、中身の位置と大きさから縮小率とずらしを決める（拡大はしない） */
+/** Scale and offset that fit the content inside the card frame, from its position and size (never scales up) */
 const fitOf = (c: { left: number; top: number; width: number; height: number } | null) => {
   if (!c) return `scale(${THUMB.boxW / THUMB.width})`;
   const k = Math.min(1, (THUMB.boxW - THUMB.pad * 2) / Math.max(c.width, 1), (THUMB.boxH - THUMB.pad * 2) / Math.max(c.height, 1));
@@ -108,7 +108,7 @@ function StoryCard({ story, onDrag, hint }: { story: Story; onDrag: Props['onDra
   const [ready, setReady] = useState(false);
   const [fit, setFit] = useState<ReturnType<typeof captureStory>>(null);
 
-  // 見えてから読み込む（ストーリーは数百あるので、全部を一度に描かない）
+  // Load only once visible (there can be hundreds of stories, so do not render them all at once)
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
@@ -117,7 +117,7 @@ function StoryCard({ story, onDrag, hint }: { story: Story; onDrag: Props['onDra
     return () => io.disconnect();
   }, []);
 
-  // 読み込んだあと、ストーリーが描き終わるまで待つ
+  // After loading, wait until the story has finished rendering
   const onLoad = () => {
     let tries = 0;
     const id = setInterval(() => {
@@ -138,7 +138,7 @@ function StoryCard({ story, onDrag, hint }: { story: Story; onDrag: Props['onDra
     const meta = storyMeta(frame.current?.contentWindow ?? null);
     const captured: Captured = { ...shot, ...meta };
     e.preventDefault();
-    // ドラッグ中は画面全体を覆い、iframe にカーソルを取られないようにする
+    // While dragging, cover the whole screen so the iframe does not steal the cursor
     const shield = document.createElement('div');
     shield.style.cssText = 'position:fixed;inset:0;z-index:9999;cursor:grabbing';
     document.body.appendChild(shield);

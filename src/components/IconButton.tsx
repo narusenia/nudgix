@@ -3,7 +3,7 @@ import type { ComponentProps, ReactNode } from 'react';
 import s from './ui.module.css';
 
 type Props = Omit<ComponentProps<'button'>, 'children'> & {
-  /** ツールチップと aria-label に使う名前 */
+  /** Name used for the tooltip and aria-label */
   label: string;
   shortcut?: string;
   variant?: 'raised' | 'ghost' | 'primary';
@@ -27,7 +27,7 @@ export function IconButton({ label, shortcut, variant = 'ghost', pressed, classN
   );
 }
 
-/** 子要素にツールチップを付ける。子は ref とイベントを受け取れる要素であること */
+/** Attach a tooltip to the child. The child must accept a ref and events */
 export function Tip({ label, shortcut, children }: { label: string; shortcut?: string; children: React.ReactElement }) {
   return (
     <Tooltip.Root>

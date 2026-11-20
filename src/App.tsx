@@ -44,7 +44,7 @@ const LAYOUT_CSS: Record<LayoutKey, string> = {
 };
 const isEmpty = (c: Change) => countOf(c) === 0;
 
-// 見た目の好みだけを覚える。使えない環境では毎回既定に戻るだけ
+// Remembers only appearance preferences. Where storage is unavailable, it just resets to defaults each time
 const stored = (key: string) => {
   try {
     return localStorage.getItem(key);
@@ -59,8 +59,8 @@ const store = (key: string, value: string) => {
 };
 
 /**
- * 文字のキーは、日本語入力のままや CapsLock でも効くように、キーの位置（KeyS など）で決める。
- * JIS キーボードの ¥ キーも \ として扱う
+ * Letter keys match by physical key (KeyS etc.) so they work with a Japanese IME on or CapsLock.
+ * The ¥ key on JIS keyboards is treated as \
  */
 const keyOf = (e: KeyboardEvent) => {
   if (/^Key[A-Z]$/.test(e.code)) return e.code.slice(3).toLowerCase();
@@ -100,7 +100,7 @@ export function App() {
     });
   const t = DICTS[lang];
 
-  // パネルなどの UI だけを拡大縮小する。iframe の画面は等倍のまま
+  // Scale only the UI such as panels. The iframe page stays at 100%
   useEffect(() => {
     document.documentElement.style.setProperty('--ui-zoom', String(DENSITY_ZOOM[density]));
   }, [density]);
@@ -123,7 +123,7 @@ export function App() {
       return next;
     });
 
-  // ---------------------------------------------------------------- 起動の状態
+  // ---------------------------------------------------------------- startup state
   const [status, setStatus] = useState<Status | null>(null);
   const [ready, setReady] = useState(false);
   const refreshStatus = useCallback(async () => {
@@ -141,7 +141,7 @@ export function App() {
     return () => clearInterval(id);
   }, [ready, refreshStatus]);
 
-  // ---------------------------------------------------------------- トークンと選択
+  // ---------------------------------------------------------------- tokens and selection
   const frameRef = useRef<HTMLIFrameElement>(null);
   const [tokens, setTokens] = useState<Tokens | null>(null);
   const [tokensError, setTokensError] = useState<string | null>(null);
@@ -155,11 +155,11 @@ export function App() {
   const [peek, setPeek] = useState<Element | null>(null);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [galleryOpen, setGalleryOpen] = useState(false);
-  // ギャラリーから運んでいる間の、落とす先の枠と線（iframe の座標）と、カーソルについてくる影（エディタの座標）
+  // While dragging from the gallery: the drop target frame and line (iframe coordinates), and the ghost following the cursor (editor coordinates)
   const [dropHint, setDropHint] = useState<Drop | null>(null);
   const [storyGhost, setStoryGhost] = useState<{ left: number; top: number; width: number; height: number } | null>(null);
   const lastDrop = useRef<Drop | null>(null);
-  // 全画面のツールバーの位置。下の要素を選べるよう、ロゴをつかんで動かせる
+  // Fullscreen toolbar position. Drag it by the logo so elements underneath can be selected
   const [barPos, setBarPos] = useState<{ x: number; y: number } | null>(() => {
     try {
       return JSON.parse(stored('nudgix.barPos') ?? 'null');
@@ -170,13 +170,13 @@ export function App() {
   const dragBar = (e: React.PointerEvent<HTMLElement>) => {
     const barEl = e.currentTarget.parentElement!;
     const bar = barEl.getBoundingClientRect();
-    // left/top は親（キャンバス）基準で、UI の拡大率も掛かるので、画面の座標から直す
+    // left/top are relative to the parent (canvas) and scaled by the UI zoom, so convert from screen coordinates
     const base = (barEl.offsetParent ?? document.body).getBoundingClientRect();
     const z = bar.width / barEl.offsetWidth || 1;
     const dx = e.clientX - bar.left;
     const dy = e.clientY - bar.top;
     let last: { x: number; y: number } | null = null;
-    // iframe の上に入ると移動を取り逃がすので、ドラッグ中だけ全体を覆う
+    // Moving over the iframe drops pointer events, so cover everything only while dragging
     const shield = document.createElement('div');
     shield.style.cssText = 'position:fixed;inset:0;z-index:9999;cursor:grabbing';
     document.body.appendChild(shield);
@@ -195,16 +195,16 @@ export function App() {
     window.addEventListener('pointermove', move);
     window.addEventListener('pointerup', up);
   };
-  // 全画面の左下（変更一覧とプロンプト）を畳んでおくか
+  // Whether the fullscreen bottom-left area (changes list and prompt) is collapsed
   const [summaryOpen, setSummaryOpen] = useState(() => stored('nudgix.summary') !== 'closed');
   const history = useRef<{ undo: HistoryStep[]; redo: HistoryStep[] }>({ undo: [], redo: [] });
-  // 並べ替えた親 → 子の並び。親が flex でも grid でもなかったときは縦の flex にして並べる
+  // Reordered parent → child order. If the parent was neither flex nor grid, it becomes a vertical flex to reorder
   const arrangements = useRef(new WeakMap<Element, Element[]>());
   const forcedParents = useRef(new WeakSet<Element>());
   const snapshots = useRef(new WeakMap<Element, Selected>());
   const [openKey, setOpenKey] = useState<PropKey | null>(null);
-  // 要素 → 変更。要素は iframe の DOM なので state に入れず、変えたら再描画だけ起こす
-  // 保存してあった変更は、要素が見つかるまで画面に無い仮の要素に結び付けておく
+  // Element → change. Elements are iframe DOM nodes, so keep them out of state and just trigger a rerender on change
+  // Saved changes are bound to placeholder elements not on the page until their element is found
   const changes = useRef<Map<Element, Change>>(null as unknown as Map<Element, Change>);
   changes.current ??= new Map(loadSaved().map((c) => [document.createElement('i'), c]));
   const [version, bump] = useReducer((x: number) => x + 1, 0);
@@ -214,7 +214,7 @@ export function App() {
       const res = await fetch('api/tokens', { cache: 'no-store' });
       const body = await res.json();
       if (!res.ok) throw new Error(body.error);
-      // CSS 変数のトークンは画面のスタイルシートから集めるので、iframe が読み込まれてから
+      // CSS variable tokens are collected from the page's stylesheets, so wait until the iframe has loaded
       const doc = frameRef.current?.contentDocument;
       if (!doc) return;
       clearResolvedCache(doc);
@@ -236,7 +236,7 @@ export function App() {
     setOpenKey(null);
   };
 
-  // 選んだ時点の「現在」を覚えておく。プレビュー中の見た目で推定し直さないため
+  // Remember the "current" value at selection time, so it is not re-inferred from the previewed look
   const snapshot = (el: Element): Selected => {
     const existing = changes.current.get(el);
     if (existing) return { el, info: existing.info, baseline: existing.baseline };
@@ -244,7 +244,7 @@ export function App() {
     if (!snap) {
       const created: Selected = { el, info: describeElement(el), baseline: detectAll(el, tokens!) };
       snapshots.current.set(el, (snap = created));
-      // ファイル:行はソースマップを取ってくるので後から埋める
+      // file:line is filled in later because it needs the source map
       locate(el).then((source) => {
         if (!source.self && !source.usage) return;
         created.info.source = source;
@@ -255,8 +255,8 @@ export function App() {
     return snap;
   };
 
-  // 幅・高さは画面の幅や文字の書き換えで変わるので、幅や表示の切り替え・変更・選び直しのたびに測り直す。
-  // 確定した幅・高さはプロンプトの変更前なので残す
+  // Width and height change with viewport width and text edits, so remeasure on width/visibility toggles, changes and reselection.
+  // Committed width and height are the prompt's "before" values, so keep them
   useEffect(() => {
     if (!tokens) return;
     const id = setTimeout(() => {
@@ -294,7 +294,7 @@ export function App() {
     setSelection((prev) => (additive ? [...prev.filter((x) => !els.includes(x.el)), ...snaps] : snaps));
   };
 
-  // 今の要素は最後に置き、主な選択（selection の末尾）のままにする
+  // Put the current element last so it stays the primary selection (end of selection)
   const selectSimilar = () => {
     if (!selected) return;
     selectMany([...similarTo(selected.el).filter((x) => x !== selected.el), selected.el], false);
@@ -303,7 +303,7 @@ export function App() {
   const persist = () =>
     save([...changes.current.entries()].map(([el, c]) => ({ ...c, locator: c.locator ?? (c.insert ? '' : locatorOf(el)) })));
 
-  /** 変更前と同じ値に戻したか。class のトークン名が同じか、トークン外の値が今の計算値と同じなら変更なしとして扱う */
+  /** Whether the value was set back to the original. Same class token name, or a non-token value equal to the current computed value, counts as no change */
   const sameAsBefore = (d: Detection | undefined, prop: PropDef, name: string) => {
     if (!d) return false;
     if (d.how === 'class') return d.name === name;
@@ -312,7 +312,7 @@ export function App() {
     return n(d.value) === n(name);
   };
 
-  // 変更はすべてここを通す。Undo/Redo と保存のため
+  // Every change goes through here, for undo/redo and persistence
   const apply = (ops: Op[], dir: 'prev' | 'next') => {
     for (const op of ops) {
       const prop = PROP_BY_KEY[op.key];
@@ -373,8 +373,8 @@ export function App() {
     bump();
   };
 
-  // ---------------------------------------------------------------- 並び（向き・揃え・並べ替え）
-  // flex の中では normal は flex-start（詰め方）や stretch（揃え）と同じ見た目になる
+  // ---------------------------------------------------------------- layout (direction, alignment, reordering)
+  // Inside flex, normal looks the same as flex-start (justify) or stretch (align)
   const sameLayout = (key: LayoutKey, a: string, b: string | undefined) => {
     const norm = (v: string | undefined) => {
       if (key === 'justifyContent' && (v === 'normal' || v === 'start')) return 'flex-start';
@@ -394,7 +394,7 @@ export function App() {
     settle(el);
   };
 
-  // flex でも grid でもない要素で詰め方や揃えを変えるときは、先に flex にする。揃えのパッドは2つを一度に変えるので、まとめて1つの履歴にする
+  // Changing justify or align on an element that is neither flex nor grid makes it flex first. The alignment pad changes two values at once, so record them as one history entry
   const setLayoutProp = (patch: Partial<Record<LayoutKey, string>>) => {
     const items = selection.flatMap(({ el }) => {
       const keys = Object.entries(patch) as [LayoutKey, string][];
@@ -428,13 +428,13 @@ export function App() {
     order.forEach((child, i) => previewRaw(child, 'order', String(i)));
   };
 
-  /** 並べ替えた要素の変更に、親の今の並びを書いておく（再読み込みのあとに当て直すため） */
+  /** Record the parent's current order on reordered elements' changes (to reapply after reload) */
   const syncOrder = (parent: Element) => {
     const order = arrangements.current.get(parent);
     const kids = [...parent.children];
     for (const child of kids) {
       const entry = changes.current.get(child);
-      // 別の親へ移した要素の move は移し先での位置なので、元の親の並びは書かない
+      // A move to another parent stores its position in the new parent, so skip the original parent's order
       if (entry?.move === undefined || entry.into) continue;
       if (order) entry.order = order.map((c) => kids.indexOf(c));
       else delete entry.order;
@@ -446,13 +446,13 @@ export function App() {
     return `${info.components[0] ?? info.tag}${info.text ? ` "${info.text.slice(0, 20)}"` : ''}`;
   };
 
-  /** 兄弟の今の並び（並べ替え済みならその順） */
+  /** Current sibling order (the reordered order if already reordered) */
   const siblingsOf = (el: Element) => {
     const parent = el.parentElement;
     return parent ? (arrangements.current.get(parent) ?? [...parent.children]) : [el];
   };
 
-  /** 選んだ要素を、自分を除いた兄弟の並びの index 番目に入れる */
+  /** Insert the selected element at index in its siblings' order, excluding itself */
   const moveTo = (index: number) => {
     const el = selected?.el;
     const parent = el?.parentElement;
@@ -466,7 +466,7 @@ export function App() {
     const prevMove = changes.current.get(el)?.move;
     const nextMove = j === 0 ? '' : shortName(after[j - 1]);
     const prevNudge = changes.current.get(el)?.nudge;
-    // 自由にずらしていた要素を並べ替えたら、ずらしは0に戻す
+    // Reordering a freely offset element resets the offset to 0
     const writeNudge = (v: { x: number; y: number } | undefined) => {
       const entry = ensureEntry(el);
       if (v && (v.x || v.y)) entry.nudge = v;
@@ -475,11 +475,11 @@ export function App() {
     };
     const moved = changes.current.get(el);
     if (moved?.into && moved.intoLoc) {
-      // 別の親へ移した要素は、移し先の中でも要素を実際に動かし、当て直し用の挿入位置を書き直す
+      // For an element moved to another parent, actually move it within the new parent too and rewrite the insertion point used for reapplying
       const prevLoc = moved.intoLoc;
       const prevNext = el.nextSibling;
       const ref = after[j + 1] ?? null;
-      // 挿入位置は、自分がいない状態の位置で覚える（当て直しは移す前の画面で探すため）
+      // Store the insertion point as the position without this element (reapplying searches the page before the move)
       el.remove();
       const nextLoc = { parent: prevLoc.parent, before: ref ? locatorOf(ref) : null };
       const write = (node: Node | null, value: string | undefined, loc: typeof prevLoc) => {
@@ -512,7 +512,7 @@ export function App() {
       syncOrder(parent);
       settle(el);
     };
-    // 元の並び（DOM の順）に戻ったら、並べ替えは無かったことにする
+    // Back to the original (DOM) order means no reordering
     const natural = [...parent.children];
     const back = after.length === natural.length && after.every((c, i) => c === natural[i]);
     const order = back ? undefined : after;
@@ -535,10 +535,10 @@ export function App() {
     if (selected) moveTo(siblingsOf(selected.el).indexOf(selected.el) + dir);
   };
 
-  // 別の親へ移した要素の元の場所。戻すときに使う
+  // Original location of elements moved to another parent, used when moving back
   const origins = useRef(new WeakMap<Element, { parent: Element; next: Node | null }>());
 
-  /** 親の中で ref の直前に el を入れる。並べ替え済みの親なら、その並びにも入れる */
+  /** Insert el right before ref in the parent. If the parent is reordered, insert it into that order too */
   const place = (el: Element, parent: Element, ref: Node | null) => {
     const from = el.parentElement;
     previewRaw(el, 'order', undefined);
@@ -553,7 +553,7 @@ export function App() {
     }
   };
 
-  // shortcut: 画面では要素を実際に別の親へ移すので、React がその辺りを描き直すと崩れることがある。崩れたら再読み込みで当て直す
+  // shortcut: the element is really moved to another parent on the page, so it can break when React rerenders that area. If it breaks, reload to reapply
   const moveInto = (container: Element, ref: Element | null) => {
     const el = selected?.el;
     const from = el?.parentElement;
@@ -561,10 +561,10 @@ export function App() {
     const entry = ensureEntry(el);
     if (!origins.current.has(el)) origins.current.set(el, { parent: from, next: el.nextSibling });
     const back = { parent: from, next: el.nextSibling };
-    // 元の親と移し先の並べ替えも、戻すときに元どおりにする
+    // Also restore the reordering of the original and target parents when moving back
     const fromOrder = arrangements.current.get(from)?.slice();
     const toOrder = arrangements.current.get(container)?.slice();
-    // 自由にずらしていた要素をどこかへ入れたら、ずらしは0に戻す
+    // Inserting a freely offset element somewhere resets the offset to 0
     const prev = { move: entry.move, into: entry.into, intoLoc: entry.intoLoc, nudge: entry.nudge };
     const kids = (arrangements.current.get(container) ?? [...container.children]).filter((c) => c !== el);
     const i = ref ? kids.indexOf(ref) : kids.length;
@@ -601,12 +601,12 @@ export function App() {
     });
   };
 
-  // 削除は display:none で隠して試す。並びの display を変えていたら、戻すときはそれに戻す
+  // Deletion is tried by hiding with display:none. If the layout display was changed, restore that on undo
   const showRemoved = (el: Element, removed: boolean) =>
     previewRaw(el, 'display', removed ? 'none' : changes.current.get(el)?.layout?.display);
 
-  // ---------------------------------------------------------------- ストーリーの差し込み
-  /** html から要素を作って parent の ref の前に入れ、変更として記録する */
+  // ---------------------------------------------------------------- story insertion
+  /** Create an element from html, insert it before ref in parent, and record it as a change */
   const insertStory = (story: Story, captured: Captured, parent: Element, ref: Element | null) => {
     const { html } = captured;
     const doc = parent.ownerDocument;
@@ -617,7 +617,7 @@ export function App() {
     node.setAttribute('data-nudgix-story', story.id);
     const kids = (arrangements.current.get(parent) ?? [...parent.children]).filter((c) => c !== node);
     const i = ref ? kids.indexOf(ref) : kids.length;
-    // 置き場所は、差し込む前の画面の位置で覚える（当て直しは差し込む前の画面で探すため）
+    // Store the placement as the position on the page before insertion (reapplying searches the page before insertion)
     const intoLoc = { parent: locatorOf(parent), before: ref ? locatorOf(ref) : null };
     const into = shortName(parent);
     place(node, parent, ref);
@@ -647,9 +647,9 @@ export function App() {
     select(node);
   };
 
-  /** 差し込んだストーリーの args を変え、描き直した要素に差し替える */
-  // Props は描き直しに時間がかかるので、続けて変えても前の結果の上に重ねるよう順番に処理する。
-  // 描き直すと要素が入れ替わるので、入れ替わった先をたどれるようにしておく
+  /** Change an inserted story's args and swap in the rerendered element */
+  // Rerendering props is slow, so process changes in order, each building on the previous result.
+  // Rerendering replaces the element, so keep a way to follow it to the replacement
   const storyQueue = useRef(Promise.resolve());
   const replacedBy = useRef(new WeakMap<Element, Element>());
   const setStoryArg = (el: Element, key: string, value: Args[string]) => {
@@ -669,9 +669,9 @@ export function App() {
     const node = tpl.content.firstElementChild;
     if (!node) return;
     node.setAttribute('data-nudgix-story', entry.insert.id);
-    // children などで文字が変わるので、パネルや変更一覧に出す文字の頭も描き直した部品から取り直す
+    // children and the like can change the text, so take the text snippet for the panel and changes list from the rerendered component again
     const next: Change = { ...entry, info: { ...entry.info, text: (node.textContent ?? '').trim().replace(/\s+/g, ' ').slice(0, 40) }, insert: { ...entry.insert, html: shot.html, args } };
-    // 差し替えても、当てていたトークンや並びの変更はそのまま当てる
+    // Keep applying token and layout changes after the swap
     const swap = (from: Element, to: Element, e: Change) => {
       const p = from.parentElement;
       if (!p) return;
@@ -692,7 +692,7 @@ export function App() {
     push({ undo: () => swap(node, el, entry), redo: () => swap(el, node, next) });
   };
 
-  /** ギャラリーのカードを運んでいる間と、落としたとき */
+  /** While a gallery card is being dragged, and when it is dropped */
   const onGalleryDrag = (story: Story, captured: Captured, at: { x: number; y: number } | null, drop: boolean) => {
     const frame = frameRef.current;
     const doc = frame?.contentDocument;
@@ -724,7 +724,7 @@ export function App() {
     const all = selection.map((x) => x.el).filter((el) => !changes.current.get(el)?.removed);
     if (!all.length) return;
     const parent = all.at(-1)!.parentElement;
-    // 差し込んだ要素は、隠すのではなく取り出す（差し込みを取り消すのと同じ）
+    // Inserted elements are removed rather than hidden (same as undoing the insertion)
     const inserted = all.filter((el) => changes.current.get(el)?.insert).map((el) => ({ el, entry: changes.current.get(el)!, parent: el.parentElement!, next: el.nextSibling }));
     const els = all.filter((el) => !changes.current.get(el)?.insert);
     const write = (on: boolean) => {
@@ -751,13 +751,13 @@ export function App() {
     };
     write(true);
     push({ undo: () => write(false), redo: () => write(true) });
-    // 消した要素は枠が出せないので、親を選び直す
+    // A deleted element cannot show a frame, so select its parent instead
     if (parent && parent !== parent.ownerDocument.body) select(parent);
     else setSelection([]);
   };
 
-  // ---------------------------------------------------------------- 文字の書き換え
-  /** 文字だけの要素なら、文字のノードをそのまま書き換える（React が持っているノードを差し替えないため） */
+  // ---------------------------------------------------------------- text editing
+  /** For a text-only element, rewrite its text node in place (so the node React holds is not replaced) */
   const setText = (el: Element, value: string) => {
     const only = el.childNodes.length === 1 && el.firstChild?.nodeType === Node.TEXT_NODE ? (el.firstChild as Text) : null;
     if (only) only.data = value;
@@ -790,13 +790,13 @@ export function App() {
     push({ undo: () => write(prev?.to), redo: () => write(next) });
   };
 
-  // 選んだ要素（かその中）の、子要素を持たない文字の要素だけ編集できる
+  // Only text elements without child elements, in or under the selected element, are editable
   const startEdit = (el: Element) => {
     const root = selected?.el;
-    // 編集中のダブルクリック（単語の選択）で編集をやり直すと、元の文字を失う
+    // Restarting the edit on a double click during editing (word selection) would lose the original text
     if (editing.current) return;
     if (!root || !(root === el || root.contains(el)) || el.children.length || !el.textContent?.trim()) return;
-    // 書き換える前の文字で要素の説明を作っておく（当て直しのときに本人か確かめるのに使う）
+    // Describe the element with its text before editing (used to confirm identity when reapplying)
     snapshot(el);
     const h = el as HTMLElement;
     editing.current = { el: h, start: h.textContent ?? '' };
@@ -810,7 +810,7 @@ export function App() {
     h.addEventListener('blur', () => finishEdit(true), { once: true });
   };
 
-  /** 見た目だけずらす。CSS の translate で、ほかの変形とは重ならない */
+  /** Visual-only offset. Uses CSS translate so it does not stack with other transforms */
   const nudge = (dx: number, dy: number) => {
     const el = selected?.el;
     if (!el || (!dx && !dy)) return;
@@ -832,7 +832,7 @@ export function App() {
     run(selection.map(({ el }) => ({ el, key: prop.key, prev: changes.current.get(el)?.props[prop.key], next: name ?? undefined })));
   };
 
-  // 要素の変更をまとめて外す・戻す（トークン・並び・並べ替え）
+  // Remove or restore all changes on an element at once (tokens, layout, reordering)
   const revertStep = (el: Element): HistoryStep | null => {
     const entry = changes.current.get(el);
     if (!entry) return null;
@@ -846,7 +846,7 @@ export function App() {
         if (el.isConnected) preview(el, prop, on ? findToken(prop, name) : undefined);
       }
       for (const [k, v] of Object.entries(saved.layout ?? {})) previewRaw(el, LAYOUT_CSS[k as LayoutKey], on ? v : undefined);
-      // shortcut: 1つを戻すと同じ親のほかの並べ替えも外れる。兄弟を個別に戻したくなったら並びを要素ごとに持つ
+      // shortcut: restoring one also drops other reorders in the same parent. Store order per element if siblings need to be restored individually
       if (saved.move !== undefined && parent && !saved.into) arrange(parent, on ? order : undefined);
       if (saved.removed) previewRaw(el, 'display', on ? 'none' : undefined);
       if (saved.text) setText(el, on ? saved.text.to : saved.text.from);
@@ -882,7 +882,7 @@ export function App() {
     if (!parent || order.length !== parent.children.length) return;
     const apply = () => arrange(parent, order.map((i) => parent.children[i]));
     apply();
-    // 読み込み直後は React が子を差し替えることがあり、そうなると order が外れるので掛け直す
+    // Right after load React may replace children, which drops order, so apply it again
     const watch = new MutationObserver(() => {
       const now = arrangements.current.get(parent);
       if (!now) return watch.disconnect();
@@ -891,7 +891,7 @@ export function App() {
     watch.observe(parent, { childList: true });
   };
 
-  // iframe が読み直されると、履歴と選択が指す要素は古い DOM のものになるので捨てる
+  // When the iframe reloads, history and selection point at stale DOM, so discard them
   const loadedDoc = useRef<Document | null>(null);
   const onFrameLoad = () => {
     const doc = frameRef.current?.contentDocument ?? null;
@@ -906,11 +906,11 @@ export function App() {
     loadTokens();
   };
 
-  // iframe の読み直しや画面遷移のあと、保存した変更の要素を探して当て直す
+  // After an iframe reload or navigation, find the elements of saved changes and reapply them
   useEffect(() => {
     const doc = frameRef.current?.contentDocument;
     if (!tokens || !doc) return;
-    // 要素がまだ見つからない変更と、別の親への移動がまだ済んでいない変更があれば、探し直しを続ける
+    // Keep searching while some changes have no element yet or a move to another parent has not been done
     const pending = () =>
       [...changes.current.entries()].some(
         ([el, e]) => e.info.route === route && ((!el.isConnected && (e.locator || e.insert)) || (el.isConnected && e.intoLoc && !origins.current.has(el))),
@@ -922,7 +922,7 @@ export function App() {
           if (key.isConnected || entry.info.route !== route || !entry.locator) continue;
           const el = findByLocator(doc, entry.locator);
           if (!el || el.tagName.toLowerCase() !== entry.info.tag || changes.current.has(el)) continue;
-        // 位置だけだと、要素を移したあとなどに別の要素を指すことがあるので、文字の頭でも本人か確かめる
+        // Position alone can point at another element (e.g. after moves), so also confirm identity by the text snippet
         const head = ((el as HTMLElement).innerText ?? el.textContent ?? '').trim().replace(/\s+/g, ' ').slice(0, 10);
         if (entry.info.text && head !== entry.info.text.slice(0, 10)) continue;
           changes.current.delete(key);
@@ -937,15 +937,15 @@ export function App() {
         }
       };
       relink();
-      // 別の親へ移す当て直しは、ほかの要素を位置で探し終えてから行う（先に動かすと位置がずれる）。
-      // 移し先と挿入位置も、1つ目を動かす前に全部探しておく
+      // Reapply moves to other parents only after locating all other elements by position (moving first shifts positions).
+      // Also locate every target and insertion point before moving the first one
       const moves = [...changes.current].flatMap(([el, entry]) => {
         if (!entry.intoLoc || !el.isConnected || entry.info.route !== route) return [];
         const parent = findByLocator(doc, entry.intoLoc.parent);
         const ref = entry.intoLoc.before ? findByLocator(doc, entry.intoLoc.before) : null;
         return parent && parent !== el.parentElement && !el.contains(parent) ? [{ el, parent, ref }] : [];
       });
-      // 差し込んだストーリーも、置き場所を先に探してから作り直す
+      // Inserted stories also locate their placement first, then get recreated
       const inserts = [...changes.current].flatMap(([key, entry]) => {
         if (!entry.insert || key.isConnected || !entry.intoLoc || entry.info.route !== route) return [];
         const parent = findByLocator(doc, entry.intoLoc.parent);
@@ -970,13 +970,13 @@ export function App() {
         for (const [k, v] of Object.entries(entry.layout ?? {})) previewRaw(node, LAYOUT_CSS[k as LayoutKey], v);
         moved = true;
       }
-      // 移したあとに記録した変更は、移したあとの位置で覚えているので、もう一度探す
+      // Changes recorded after a move are stored by the post-move position, so search again
       relink();
       if (moved) bump();
     };
     rehydrate();
     if (!pending()) return;
-    // データを取ってから描く部分は読み込みの時点ではまだ無いので、画面が変わるたびに探し直す
+    // Parts rendered after fetching data are not there at load time, so search again on every page change
     let raf = 0;
     const watch = new MutationObserver(() => {
       cancelAnimationFrame(raf);
@@ -992,10 +992,10 @@ export function App() {
       clearTimeout(stop);
       cancelAnimationFrame(raf);
     };
-    // biome-ignore lint: tokens は iframe の読み込みごとに取り直すので、それを合図にする
+    // biome-ignore lint: tokens are refetched on every iframe load, so use them as the trigger
   }, [tokens, route]);
 
-  // 押している間だけ変更前：確定した差し替えを一時的に外す
+  // Show "before" only while held: temporarily remove committed swaps
   useEffect(() => {
     for (const [el, entry] of changes.current) {
       if (!el.isConnected) continue;
@@ -1013,7 +1013,7 @@ export function App() {
         else reorderFromSaved(el, entry.order);
       }
     }
-    // biome-ignore lint: 切り替えたときだけ当て直す
+    // biome-ignore lint: reapply only when toggled
   }, [before]);
 
   const changeList = [...changes.current.entries()];
@@ -1023,9 +1023,9 @@ export function App() {
   };
   const prompt = buildPrompt(changeList.map(([, c]) => c), tokens ?? emptyTokens(), t, !!status?.hasSkill);
 
-  // ---------------------------------------------------------------- キーボード（エディタと iframe の両方から呼ぶ）
+  // ---------------------------------------------------------------- keyboard (called from both the editor and the iframe)
   const onKeyDown = (e: KeyboardEvent) => {
-    // 編集中の要素が描き直しで消えると blur が来ないので、ここで編集の状態を捨てる
+    // If the element being edited disappears in a rerender, blur never fires, so drop the edit state here
     if (editing.current && !editing.current.el.isConnected) editing.current = null;
     const key = keyOf(e);
     if (editing.current) {
@@ -1127,7 +1127,7 @@ export function App() {
     );
   }
 
-  // ---------------------------------------------------------------- 部品（両方のレイアウトで使い回す）
+  // ---------------------------------------------------------------- parts (shared by both layouts)
   const floating = layout === 'floating';
 
   const langToggle = (
@@ -1298,7 +1298,7 @@ export function App() {
       selectedEls={selection.map((x) => x.el)}
       zoom={zoom}
       onPick={(el, additive) => {
-        // Shift を押していれば選択モードのまま足していく
+        // Holding Shift keeps adding in selection mode
         if (!additive) setPicking(false);
         select(el, additive);
       }}
@@ -1399,12 +1399,12 @@ export function App() {
 
   const promptPanel = <PromptPanel prompt={prompt} empty={changeList.length === 0} hasSkill={!!status?.hasSkill} onInstalled={refreshStatus} />;
 
-  // 選んだ要素と重ならないよう、要素が右半分にあれば全画面のパネルを左に出す
+  // To avoid covering the selected element, put the fullscreen panel on the left when the element is in the right half
   const selRect = selected?.el.isConnected ? selected.el.getBoundingClientRect() : null;
   const frameW = frameRef.current?.clientWidth ?? 0;
   const [near, far] = selRect && selRect.left + selRect.width / 2 > frameW / 2 ? [s.floatLeft, s.floatRight] : [s.floatRight, s.floatLeft];
 
-  // 2つのレイアウトで iframe（canvas）の位置を変えない。作り直されると画面が読み直され、変更が消える
+  // Keep the iframe (canvas) in the same place across both layouts. Recreating it reloads the page and loses changes
   return (
     <LangContext.Provider value={lang}>
       <Tooltip.Provider delay={300}>
@@ -1545,7 +1545,7 @@ export function App() {
           commands={commands}
           onClose={closePalette}
           anchor={() => {
-            // iframe の中の位置を、拡大率を戻してエディタの画面の座標に直す
+            // Convert the position inside the iframe to editor screen coordinates by undoing the zoom
             const frame = frameRef.current;
             if (!selected?.el.isConnected || !frame) return null;
             const fr = frame.getBoundingClientRect();

@@ -9,12 +9,12 @@ export type Command = {
   id: string;
   group: string;
   label: string;
-  /** 右端に出す値やショートカット */
+  /** Value or shortcut shown at the right edge */
   hint?: string;
   icon?: ReactNode;
-  /** 絞り込みに使う追加の語 */
+  /** Extra words to match when filtering */
   keywords?: string;
-  /** 選んでいる間の見た目の試し（トークンの差し替えなど） */
+  /** Live preview while the item is highlighted (e.g. swapping a token) */
   onPreview?: () => void;
   onRun: () => void;
 };
@@ -23,7 +23,7 @@ const MAX = 80;
 
 type Rect = { left: number; top: number; bottom: number };
 
-/** anchor は選んでいる要素の位置（エディタの画面の座標）を返す。無ければカーソルの下に出す */
+/** anchor returns the selected element's position (editor screen coordinates). Without one, the palette opens under the cursor */
 export function CommandPalette({ open, commands, onClose, anchor }: { open: boolean; commands: Command[]; onClose: () => void; anchor: () => Rect | null }) {
   const t = useT();
   const [query, setQuery] = useState('');
@@ -37,7 +37,7 @@ export function CommandPalette({ open, commands, onClose, anchor }: { open: bool
     }
   }, [open]);
 
-  // 空白で区切った語がすべて含まれるものだけ残す（「角丸 md」など）
+  // Keep only items containing every space-separated word (e.g. "radius md")
   const filtered = useMemo(() => {
     const terms = query.toLowerCase().split(/\s+/).filter(Boolean);
     return commands.filter((c) => terms.every((term) => `${c.group} ${c.label} ${c.hint ?? ''} ${c.keywords ?? ''}`.toLowerCase().includes(term))).slice(0, MAX);
@@ -48,7 +48,7 @@ export function CommandPalette({ open, commands, onClose, anchor }: { open: bool
   useEffect(() => {
     if (open) active?.onPreview?.();
     listRef.current?.querySelector('[data-active]')?.scrollIntoView({ block: 'nearest' });
-    // biome-ignore lint: 選んでいる候補が変わったときだけ試す
+    // biome-ignore lint: preview only when the highlighted item changes
   }, [active?.id, open]);
 
   const onKeyDown = (e: React.KeyboardEvent) => {
@@ -61,8 +61,8 @@ export function CommandPalette({ open, commands, onClose, anchor }: { open: bool
     }
   };
 
-  // 開いた瞬間に、選んでいる要素の下（入らなければ上）か、無ければカーソルの下に出す。
-  // 画面からはみ出す分は内側に寄せる。UI の拡大率は left/top にも掛かるので割り戻す
+  // On open, place below the selected element (above if it does not fit), or under the cursor if nothing is selected.
+  // Clamp into the viewport. The UI zoom also scales left/top, so divide it back out
   const at = useMemo(() => {
     if (!open) return undefined;
     const z = Number.parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--ui-zoom')) || 1;
@@ -78,7 +78,7 @@ export function CommandPalette({ open, commands, onClose, anchor }: { open: bool
     const left = Math.max(16, Math.min(innerWidth - w - 16, x));
     const top = Math.max(16, Math.min(innerHeight - h - 16, y));
     return { left: left / z, top: top / z };
-    // biome-ignore lint: 開いた瞬間の位置だけを使う
+    // biome-ignore lint: use the position at open time only
   }, [open]);
 
   let lastGroup = '';

@@ -16,7 +16,7 @@ export function PromptPanel({ prompt, empty, hasSkill, onInstalled }: { prompt: 
       await navigator.clipboard.writeText(prompt);
       setCopied(true);
     } catch {
-      // クリップボードが使えないときは選択だけして、⌘C を押してもらう
+      // When the clipboard is unavailable, just select the text and let the user press ⌘C
       const range = document.createRange();
       if (preRef.current) range.selectNodeContents(preRef.current);
       getSelection()?.removeAllRanges();

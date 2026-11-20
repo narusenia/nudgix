@@ -1,4 +1,4 @@
-/* エディタの見た目の土台。semi-neumorphism は「浮いた面（--shadow）」と「凹んだ面（--inset）」の2種類だけで組む */
+/* Base look of the editor. The semi-neumorphism uses only two surfaces: raised (--shadow) and inset (--inset) */
 :root {
   color-scheme: dark;
   --bg: #0e0f11;
@@ -17,7 +17,7 @@
   --shadow: 0 0 0 1px rgba(255, 255, 255, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 6px 16px -4px rgba(0, 0, 0, 0.6), 0 1px 2px rgba(0, 0, 0, 0.5);
   --inset: inset 0 1px 3px rgba(0, 0, 0, 0.55), inset 0 -1px 0 rgba(255, 255, 255, 0.04);
   --accent-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 2px 8px rgba(94, 106, 210, 0.4);
-  /* iframe の周りはテーマに関係なく中立のグレー（色の見え方を狂わせない） */
+  /* Neutral gray around the iframe regardless of theme, so it does not skew how colors look */
   --stage: #46474b;
   --sans: Inter, 'Noto Sans JP', system-ui, sans-serif;
   --mono: 'JetBrains Mono', ui-monospace, monospace;

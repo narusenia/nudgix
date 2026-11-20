@@ -40,7 +40,7 @@ export function Breadcrumbs({ el, onSelect, onPeek }: { el: Element; onSelect: (
             onFocus={() => onPeek(node)}
             onBlur={() => onPeek(null)}
           >
-            {/* React で無い画面は部品名が無いので、最初の class で見分ける */}
+            {/* Non-React pages have no component name, so identify by the first class */}
             {componentChain(node)[0] ?? (node.classList[0] ? `.${node.classList[0]}` : node.tagName.toLowerCase())}
             <span className={s.crumbTag}>{node.tagName.toLowerCase()}</span>
           </button>

@@ -1,5 +1,5 @@
-// スタイルの仕組みごとの違いをここに閉じ込める。土台は css-vars（画面の CSS 変数と CSS の規則だけで読む）で、
-// どの構成でも動く。Tailwind などはアダプターを足して、トークンの読み方とプロンプトの書き方の精度を上げる
+// Keeps the differences between styling systems in one place. The base is css-vars (reads only the page's CSS variables and CSS rules),
+// which works with any setup. Adapters for Tailwind and others improve how tokens are read and how prompts are written
 import { declaredValue, matchedRules, rootVariables } from './css';
 import type { PropDef } from './props';
 import type { Category, PropKey, Token, Tokens } from './types';
@@ -8,15 +8,15 @@ export type AdapterId = 'css-vars' | 'tailwind-v4';
 
 export type Adapter = {
   id: AdapterId;
-  /** トークン一覧。サーバーが読んだもの（Tailwind）か、画面のスタイルシートから集めたもの（CSS 変数） */
+  /** Token list. Either read by the server (Tailwind) or collected from the page's stylesheets (CSS variables) */
   tokens: (doc: Document, fromServer: Tokens | null) => Tokens;
-  /** 要素の書き方（class や CSS の規則）から、当たっているトークンを確かめる。list は計算値が同じトークン */
+  /** Determine the applied token from how the element is styled (class or CSS rule). list holds tokens with the same computed value */
   bySource: (el: Element, prop: PropDef, list: Token[]) => Token | undefined;
   /** How a token is written in the prompt. key is a PropKey or a merged name (padding, paddingBlock, paddingInline) */
   format: (key: string, name: string) => string;
   /** Ways the token can appear in source, used to annotate the code peek (p-4, px-4 and pl-4 for paddingLeft 4) */
   written: (key: PropKey, name: string) => string[];
-  /** 要素のスタイルの手がかり（class やセレクタ）。プロンプトとコードタブに出す */
+  /** Style hints for the element (classes or selectors). Shown in the prompt and the Code tab */
   hints: (el: Element) => string[];
 };
 
@@ -24,7 +24,7 @@ export const emptyTokens = (): Tokens => ({ colors: [], spacing: [], fontSizes: 
 
 const isLength = (v: string) => /\d/.test(v) && CSS.supports('width', v);
 
-/** 変数の名前と値から、どの種類のトークンかを決める。決められないものは使わない */
+/** Decide the token kind from the variable's name and value. Variables that cannot be classified are skipped */
 export function categoryOf(name: string, value: string): Category | null {
   const n = name.toLowerCase();
   if (/shadow|elevation/.test(n)) return 'shadows';
@@ -42,7 +42,7 @@ const cssVars: Adapter = {
     const out = emptyTokens();
     const root = doc.defaultView!.getComputedStyle(doc.documentElement);
     for (const name of rootVariables(doc)) {
-      // フレームワークや nudgix 自身の内部用の変数は出さない
+      // Hide internal variables of frameworks and of nudgix itself
       if (/^--(tw-|nudgix|next-|vite-)/.test(name)) continue;
       const value = root.getPropertyValue(name).trim();
       const category = value ? categoryOf(name, value) : null;

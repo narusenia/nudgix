@@ -3,7 +3,7 @@ import { adapter } from './adapters';
 import { MERGES, PROP_BY_KEY, tokenOf } from './props';
 import type { Change, Detection, PropKey, Tokens } from './types';
 
-/** プロンプト用の短い「現在」。推定は末尾に ? を付ける */
+/** Short "current" value for the prompt. Inferred values get a trailing ? */
 export function shortDetection(d: Detection, key: string): string {
   const f = (name: string) => adapter().format(key, name);
   if (d.how === 'class') return f(d.name);
@@ -20,7 +20,7 @@ const signed = (n: number) => `${n >= 0 ? '+' : ''}${Math.round(n)}`;
 function changeLines(change: Change, tokens: Tokens): string[] {
   const props = { ...change.props };
   const from = (key: PropKey) => shortDetection(change.baseline[key], key);
-  // トークンでない値（パネルで直接入れた値）は、「現在」と同じく括弧で包んで書く
+  // Non-token values (typed directly in the panel) are wrapped in parentheses, like "current"
   const shown = (key: PropKey, v: string, as: string = key) => (tokenOf(tokens, PROP_BY_KEY[key].category, v)?.raw ? `(${v})` : adapter().format(as, v));
   const lines: string[] = [];
   for (const merge of MERGES) {
@@ -46,10 +46,10 @@ function changeLines(change: Change, tokens: Tokens): string[] {
   return lines;
 }
 
-// トークン効率のため、1要素を「場所の1行＋差し替えの行」に詰める
+// For token efficiency, pack each element into "one location line + swap lines"
 export function buildPrompt(changes: Change[], tokens: Tokens, t: Dict, withSkill: boolean): string {
   const blocks = changes.map(({ info, ...rest }) => {
-    // ファイル:行が分かれば、探すための手がかり（URL・部品の連なり・class）は省く
+    // When file:line is known, omit the search hints (URL, component chain, classes)
     const src = info.source;
     const story = rest.insert;
     const where = (
@@ -70,7 +70,7 @@ export function buildPrompt(changes: Change[], tokens: Tokens, t: Dict, withSkil
       .join(' ');
     return [where, ...changeLines({ info, ...rest }, tokens).map((l) => `  ${l}`)].join('\n');
   });
-  // スキルはこの行を見て、どの書き方（Tailwind の class、CSS 変数など）で直すかを決める
+  // The skill reads this line to decide how to edit (Tailwind classes, CSS variables, etc.)
   const head = withSkill ? ['/apply-nudges', `adapter: ${adapter().id}`] : [t.promptText.intro(adapter().id), ...t.promptText.rules];
   return [...head, '', ...blocks].join('\n');
 }

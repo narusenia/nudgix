@@ -1,4 +1,4 @@
-// 最後にカーソルがあった位置（エディタの画面の座標）。パレットをカーソルの下に出すのに使う
+// Last cursor position (editor screen coordinates). Used to open the palette under the cursor
 export const pointer = { x: innerWidth / 2, y: 80 };
 
 addEventListener('pointermove', (e) => {

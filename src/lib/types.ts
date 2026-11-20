@@ -2,22 +2,22 @@ export type Category = 'colors' | 'spacing' | 'fontSizes' | 'fontWeights' | 'rad
 
 export type Token = {
   name: string;
-  /** プレビューで当てる CSS の値（var(--space-4)、calc(var(--spacing) * 4) など） */
+  /** CSS value applied in preview (var(--space-4), calc(var(--spacing) * 4) etc.) */
   css?: string;
-  /** textStyles のように、複数のプロパティをまとめて当てるトークン。CSS プロパティ → 値 */
+  /** Token that applies several properties at once, like textStyles. CSS property → value */
   style?: Record<string, string>;
   /** The CSS variable behind the token. When the page defines it, previews use var() so values match the page exactly */
   variable?: string;
-  /** 一覧を分けて見せるときの見出し */
+  /** Heading used when the list is shown in groups */
   group?: string;
   description: string;
-  /** トークンではなく、パネルで直接入れた値。name に CSS の値がそのまま入る */
+  /** A value typed directly in the panel rather than a token. name holds the raw CSS value */
   raw?: boolean;
 };
 
 export type Tokens = Record<Category, Token[]>;
 
-/** 要素がいま使っているトークンの推定結果 */
+/** Inferred tokens the element currently uses */
 export type Detection =
   | { how: 'class'; name: string; value?: string }
   | { how: 'value'; candidates: string[]; value: string }
@@ -28,10 +28,10 @@ export type ElementInfo = {
   tag: string;
   components: string[];
   text: string;
-  /** トークンに関係する class だけ */
+  /** Only token-related classes */
   tokenClasses: string[];
   marks: string[];
-  /** ソースマップから戻した作成場所。self は要素を作った場所、usage はその部品を使っている場所 */
+  /** Creation site recovered via source maps. self is where the element was created, usage is where its component is used */
   source?: { self: string | null; usage: string | null };
 };
 
@@ -56,7 +56,7 @@ export type PropKey =
   | 'borderRadius'
   | 'boxShadow';
 
-/** トークンではない並びの設定。値は CSS の値そのまま */
+/** Non-token layout settings. Values are raw CSS values */
 export type LayoutKey = 'display' | 'flexDirection' | 'justifyContent' | 'alignItems' | 'flexWrap';
 
 export type Change = {
@@ -64,21 +64,21 @@ export type Change = {
   baseline: Record<PropKey, Detection>;
   props: Partial<Record<PropKey, string>>;
   layout?: Partial<Record<LayoutKey, string>>;
-  /** 並びの設定の変更前の値 */
+  /** Original values of the layout settings */
   layoutBase?: Partial<Record<LayoutKey, string>>;
-  /** 兄弟の中での並べ替え。直前に来る兄弟の説明（先頭なら空文字） */
+  /** Reordering among siblings. Description of the sibling that comes right before (empty string if first) */
   move?: string;
-  /** 並べ替えたあとの親の子の並び（元の位置の番号）。当て直し用 */
+  /** Parent's child order after reordering (original indexes), for reapplying */
   order?: number[];
-  /** 別の親へ移したときの、移し先の説明 */
+  /** Description of the target when moved to another parent */
   into?: string;
-  /** 移し先の親と、直後に来る要素の位置（当て直し用） */
+  /** Target parent and position of the element right after it (for reapplying) */
   intoLoc?: { parent: string; before: string | null };
-  /** 見た目だけずらした量（px） */
+  /** Visual-only offset (px) */
   nudge?: { x: number; y: number };
-  /** 削除を試している */
+  /** Trying out deletion */
   removed?: boolean;
-  /** Storybook のストーリーから差し込んだ要素。into・move・intoLoc に置き場所が入る */
+  /** Element inserted from a Storybook story. into, move and intoLoc hold its placement */
   insert?: {
     id: string;
     title: string;
@@ -88,9 +88,9 @@ export type Change = {
     args?: Record<string, string | number | boolean>;
     argTypes?: Record<string, { kind: 'select' | 'boolean' | 'text' | 'number'; options?: string[] }>;
   };
-  /** 文字の書き換え */
+  /** Text edit */
   text?: { from: string; to: string };
-  /** 保存と当て直し用。body からの位置 */
+  /** For saving and reapplying. Position from body */
   locator?: string;
 };
 
@@ -100,6 +100,6 @@ export type Selected = {
   baseline: Record<PropKey, Detection>;
 };
 
-/** 変更の件数（トークン・並び・並べ替えを1つずつ数える） */
+/** Change count (tokens, layout and reordering each count as one) */
 export const countOf = (c: Change) =>
   Object.keys(c.props).length + Object.keys(c.layout ?? {}).length + (c.move !== undefined || c.insert ? 1 : 0) + (c.nudge ? 1 : 0) + (c.removed ? 1 : 0) + (c.text ? 1 : 0);

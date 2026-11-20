@@ -24,7 +24,7 @@ const ja = {
     height: '高さ',
     boxShadow: '影',
   } satisfies Record<PropKey, string>,
-  // パネルの節の中で使う短い名前。節の見出しと重なる語（文字・背景）を落とす
+  // Short names used inside panel sections. Drops words the section heading already says (text, background)
   propsShort: { textStyle: 'スタイル', fontSize: 'サイズ', color: '色', backgroundColor: '背景', borderColor: '枠線' } as Partial<Record<PropKey, string>>,
   groups: { color: '色', text: '文字', space: '余白', size: 'サイズ', radius: '角丸', effect: '影' } satisfies Record<Group, string>,
   command: 'コマンド',

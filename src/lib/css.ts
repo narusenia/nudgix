@@ -1,11 +1,11 @@
-// 画面のスタイルシート（CSSOM）を読む処理。どのスタイルの仕組みでも、最後は CSS のルールになっているので土台に使う
+// Reads the page's stylesheets (CSSOM). Every styling system ends up as CSS rules, so this is the common base
 
-/** スタイルシートの規則を全部たどる。読めない別オリジンのシートは飛ばす。@media は今の画面に合うものだけ */
+/** Walk every stylesheet rule. Skips unreadable cross-origin sheets. For @media, only those matching the current viewport */
 function walkRules(doc: Document, visit: (rule: CSSStyleRule) => void) {
   const win = doc.defaultView!;
   const walk = (rules: CSSRuleList) => {
     for (const rule of rules) {
-      // iframe の中の規則は別の window の CSSStyleRule なので、instanceof ではなく形で見分ける
+      // Rules inside the iframe are another window's CSSStyleRule, so check by shape instead of instanceof
       if ('media' in rule && rule.media && 'mediaText' in (rule.media as MediaList) && !win.matchMedia((rule.media as MediaList).mediaText).matches) continue;
       if ('selectorText' in rule) visit(rule as CSSStyleRule);
       if ('cssRules' in rule && (rule as CSSGroupingRule).cssRules) walk((rule as CSSGroupingRule).cssRules);
@@ -18,7 +18,7 @@ function walkRules(doc: Document, visit: (rule: CSSStyleRule) => void) {
   }
 }
 
-/** 要素に当たっている規則。スタイルシートの順（後ろほど強い）。詳細度とカスケードレイヤーは見ない */
+/** Rules matching the element, in stylesheet order (later wins). Ignores specificity and cascade layers */
 export function matchedRules(el: Element): CSSStyleRule[] {
   const out: CSSStyleRule[] = [];
   walkRules(el.ownerDocument, (rule) => {
@@ -43,8 +43,8 @@ const SHORTHAND: Record<string, string> = {
 };
 
 /**
- * 要素の CSS に書かれたままの値（var(--space-4) など）。計算値ではなく、書いた値を返す。
- * 一括指定（padding: var(--a)）は、var() が1つだけのときに限り各辺の値とみなす
+ * The value as written in the element's CSS (e.g. var(--space-4)). Returns the authored value, not the computed one.
+ * A shorthand (padding: var(--a)) counts as each side's value only when it has exactly one var()
  */
 export function declaredValue(el: Element, css: string): string {
   const rules = [(el as HTMLElement).style, ...matchedRules(el).reverse().map((r) => r.style)];
@@ -57,7 +57,7 @@ export function declaredValue(el: Element, css: string): string {
   return '';
 }
 
-/** :root などに書かれたカスタムプロパティの名前 */
+/** Names of custom properties declared on :root and the like */
 export function rootVariables(doc: Document): string[] {
   const names = new Set<string>();
   walkRules(doc, (rule) => {
@@ -67,7 +67,7 @@ export function rootVariables(doc: Document): string[] {
   return [...names];
 }
 
-/** 規則を書いた CSS ファイル。Vite の開発サーバーは <style data-vite-dev-id="/絶対パス"> で入れるので、そこから分かる */
+/** CSS file that declared the rule. Vite's dev server injects <style data-vite-dev-id="/absolute/path">, which tells us */
 export function fileOf(rule: CSSStyleRule, projectDir: string): string | null {
   const owner = rule.parentStyleSheet?.ownerNode as Element | null;
   const abs = owner?.getAttribute?.('data-vite-dev-id');

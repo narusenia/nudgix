@@ -8,10 +8,10 @@ import type { Change, Selected } from '../lib/types';
 import { IconButton } from './IconButton';
 import s from './ui.module.css';
 
-/** Promise を待って値にする。deps が変わったら取り直し、古い結果は捨てる */
+/** Await a Promise as a value. Refetches when deps change and discards stale results */
 function useAsync<T>(make: () => Promise<T> | null, deps: unknown[]): T | undefined {
   const [value, setValue] = useState<T>();
-  // biome-ignore lint/correctness/useExhaustiveDependencies: 呼び出し側が deps を決める
+  // biome-ignore lint/correctness/useExhaustiveDependencies: the caller decides deps
   useEffect(() => {
     setValue(undefined);
     const p = make();
@@ -38,7 +38,7 @@ const save = (key: string, value: string) => {
   } catch {}
 };
 
-/** 開発ビルドの React だけが、JSX を書いた場所を持っている */
+/** Only React dev builds know where the JSX was written */
 const hasDebug = (el: Element) => !!fiberOf(el)?._debugStack;
 
 function CopyButton({ text, label }: { text: string; label: string }) {
@@ -57,16 +57,16 @@ function CopyButton({ text, label }: { text: string; label: string }) {
   );
 }
 
-/** ファイル:行の見出しとソースの抜粋。対象の行を強調し、変更の行き先を行の横に出す */
+/** file:line heading and source excerpt. Highlights the target line and shows where changes land beside each line */
 export function SourceView({ loc, around, change, title }: { loc: string; around: number; change?: Change; title?: string }) {
   const t = useT();
   const snippet = useAsync<Snippet | null>(() => fetchSource(loc, around), [loc, around]);
   const target = Number(loc.match(/:(\d+)$/)?.[1]);
   const notes = snippet ? annotate(snippet, change, t) : new Map<number, string[]>();
-  // 色分けは後から。届くまでは単色で出す
+  // Syntax colors arrive later. Show plain text until then
   const colored = useAsync(() => (snippet ? highlight(snippet.lines).catch(() => null) : null), [snippet]);
   const lineRef = useRef<HTMLDivElement>(null);
-  // scrollIntoView だとエディタの画面まで動くので、抜粋の箱の中だけを動かす
+  // scrollIntoView would scroll the editor too, so scroll only inside the excerpt box
   useEffect(() => {
     const line = lineRef.current;
     const box = line?.parentElement;
@@ -94,7 +94,7 @@ export function SourceView({ loc, around, change, title }: { loc: string; around
                 <span className={s.codeText}>
                   {colored?.[i]?.length
                     ? colored[i].map((tk, j) => (
-                        // biome-ignore lint/suspicious/noArrayIndexKey: 行の中の字句の並び
+                        // biome-ignore lint/suspicious/noArrayIndexKey: tokens within a line
                         <span key={j} style={tk.style as React.CSSProperties}>
                           {tk.content}
                         </span>
@@ -111,7 +111,7 @@ export function SourceView({ loc, around, change, title }: { loc: string; around
   );
 }
 
-/** 部品が src の中で何か所に書かれているか。共通部品を直すと、ここに挙がった全部に効く */
+/** How many places in src use the component. Fixing a shared component affects every place listed here */
 function UsageCount({ name }: { name: string }) {
   const t = useT();
   const found = useAsync(() => findUsages(name), [name]);
@@ -138,12 +138,12 @@ function UsageCount({ name }: { name: string }) {
   );
 }
 
-/** 右パネルの「コード」タブ。選んだ要素1つについて、書かれた場所・使われている場所・影響範囲を出す */
+/** The right panel's Code tab. For one selected element, shows where it is written, where it is used and what a change would affect */
 export function CodeTab({ selected, change }: { selected: Selected; change: Change | undefined }) {
   const t = useT();
   const { el, info } = selected;
   const source = useAsync(() => locate(el), [el]);
-  // 書いた場所が取れないとき（ライブラリの中の要素）と、影響範囲を数える部品は、src に書かれた一番近い部品を使う
+  // When the source location is unknown (elements inside a library), and for counting impact, use the nearest component written in src
   const near = useAsync(() => nearestSrc(el), [el]);
   const component = near?.name;
   return (
@@ -181,7 +181,7 @@ export function CodeTab({ selected, change }: { selected: Selected; change: Chan
   );
 }
 
-// ---------------------------------------------------------------- 下のドロワー
+// ---------------------------------------------------------------- bottom drawer
 
 const EDITOR_ATTR = /^data-nudgix/;
 const hl = (cls: string) =>
@@ -202,9 +202,9 @@ type TreeProps = {
   whole?: boolean;
 };
 
-/** outerHTML を折りたためる木で出す。乗せると画面の要素を示し、押すとその要素を選ぶ */
+/** Render outerHTML as a collapsible tree. Hover highlights the element on the page; click selects it */
 function HtmlNode({ el, depth, selectedEl, isChanged, onSelect, onPeek, whole }: TreeProps) {
-  // 全体を見るときは、選んだ要素までの道筋だけを開く
+  // When showing the whole page, expand only the path to the selected element
   const onPath = el !== selectedEl && el.contains(selectedEl);
   const [open, setOpen] = useState(whole ? onPath : depth < 2);
   useEffect(() => {
@@ -270,10 +270,10 @@ function HtmlNode({ el, depth, selectedEl, isChanged, onSelect, onPeek, whole }:
       {open && !onlyText
         ? kids.map((n, i) =>
             n.nodeType === 1 ? (
-              // biome-ignore lint/suspicious/noArrayIndexKey: DOM の子の並び
+              // biome-ignore lint/suspicious/noArrayIndexKey: DOM child order
               <HtmlNode key={i} el={n as Element} depth={depth + 1} selectedEl={selectedEl} isChanged={isChanged} onSelect={onSelect} onPeek={onPeek} whole={whole} />
             ) : (
-              // biome-ignore lint/suspicious/noArrayIndexKey: DOM の子の並び
+              // biome-ignore lint/suspicious/noArrayIndexKey: DOM child order
               <div key={i} className={`${s.htmlText} ${s.ellipsis}`} style={{ paddingLeft: 12 + 16 }}>
                 {text(n)}
               </div>
@@ -289,7 +289,7 @@ function HtmlNode({ el, depth, selectedEl, isChanged, onSelect, onPeek, whole }:
   );
 }
 
-/** 部品の連なりの1段。開くと JSX を書いた場所のソースを出す */
+/** One level of the component chain. Expanding shows the source where its JSX was written */
 function ReactRow({ part, change, defaultOpen }: { part: ReactPart; change?: Change; defaultOpen: boolean }) {
   const t = useT();
   const [open, setOpen] = useState(defaultOpen);
@@ -333,7 +333,7 @@ function ReactRow({ part, change, defaultOpen }: { part: ReactPart; change?: Cha
 
 type DrawerProps = {
   selected: Selected | null;
-  /** 全体を見るときの画面の document */
+  /** The page's document when showing the whole page */
   doc: Document | null;
   change: Change | undefined;
   isChanged: (el: Element) => boolean;
@@ -345,7 +345,7 @@ type DrawerProps = {
   floating: boolean;
 };
 
-/** 下のドロワー。HTML と React の2つのタブで、選んだ要素の中身を見る */
+/** Bottom drawer. HTML and React tabs show the contents of the selected element */
 export function CodeDrawer({ selected, doc, change, isChanged, onSelect, onPeek, onClose, inlinePeek, onInlinePeek, floating }: DrawerProps) {
   const t = useT();
   const [tab, setTab] = useState<'html' | 'react'>(() => (load('nudgix.codeTab') === 'react' ? 'react' : 'html'));
@@ -353,7 +353,7 @@ export function CodeDrawer({ selected, doc, change, isChanged, onSelect, onPeek,
   const [height, setHeight] = useState(() => Number(load('nudgix.codeHeight')) || 260);
   const chain = selected ? reactChain(selected.el) : [];
 
-  // つまみで pointer capture する。window で受けると、iframe の上を通った所でイベントを iframe に取られる
+  // Use pointer capture on the grip. Listening on window loses events to the iframe when the pointer passes over it
   const drag = useRef<{ y: number; h: number; last: number } | null>(null);
   const resize = {
     onPointerDown: (e: React.PointerEvent) => {
@@ -434,7 +434,7 @@ export function CodeDrawer({ selected, doc, change, isChanged, onSelect, onPeek,
         ) : (
           <div>
             {chain.map((part, i) => (
-              // biome-ignore lint/suspicious/noArrayIndexKey: 連なりの段
+              // biome-ignore lint/suspicious/noArrayIndexKey: levels of the chain
               <ReactRow key={`${selected.el.tagName}${i}${part.name}`} part={part} change={change} defaultOpen={i === 0} />
             ))}
           </div>
@@ -444,14 +444,14 @@ export function CodeDrawer({ selected, doc, change, isChanged, onSelect, onPeek,
   );
 }
 
-// ---------------------------------------------------------------- 選んだ要素の横に出す小さなピーク
+// ---------------------------------------------------------------- small peek next to the selected element
 
-/** キャンバスの重ね合わせの中に置く。要素のすぐ下に、書いた場所の前後3行を出す */
+/** Placed in the canvas overlay. Shows 3 lines around the source location just below the element */
 export function InlinePeek({ el, change }: { el: Element; change: Change | undefined }) {
   const source = useAsync(() => locate(el), [el]);
   const near = useAsync(() => nearestSrc(el), [el]);
   const ref = useRef<HTMLDivElement>(null);
-  // 画面のスクロールや拡大に付いていく。ハンドルと同じく毎フレーム位置を合わせる
+  // Follow page scroll and zoom. Like the handles, reposition every frame
   useEffect(() => {
     let raf = 0;
     const tick = () => {

@@ -16,7 +16,7 @@ export type Status = {
   storybookUp: boolean;
 };
 
-/** dev サーバーが見つかるまでの画面。起動コマンドを出し、立ち上がったら自動で画面を開く */
+/** Screen shown until the dev server is found. Shows the start command and opens the page automatically once it is up */
 export function Waiting({ status }: { status: Status }) {
   const t = useT();
   const [copied, setCopied] = useState(false);

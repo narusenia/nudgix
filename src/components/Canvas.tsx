@@ -9,24 +9,24 @@ type Props = {
   frameRef: RefObject<HTMLIFrameElement | null>;
   initialPath: string;
   width: Width;
-  /** 全画面モード。角丸と余白を外して画面いっぱいに出す */
+  /** Fullscreen mode. Removes the rounded corners and padding to fill the screen */
   floating?: boolean;
   picking: boolean;
-  /** 最後の要素が主に操作している要素。余白の帯はこの要素に出す */
+  /** The last element is the primary one being edited. Spacing bands are shown on it */
   selectedEls: Element[];
-  /** 選んだ要素を画面の中央に大きく寄せる */
+  /** Zoom in on the selected element, centered on screen */
   zoom: boolean;
   onPick: (el: Element, additive: boolean) => void;
-  /** 矩形選択で選んだ要素（枠に完全に入った要素のうち一番外側のもの） */
+  /** Elements picked by marquee selection (outermost of those fully inside the box) */
   onPickMany: (els: Element[], additive: boolean) => void;
   onDoubleClick?: (el: Element) => void;
   onKeyDown: (e: KeyboardEvent) => void;
   onKeyUp: (e: KeyboardEvent) => void;
   onRoute: (route: string) => void;
   onLoad: () => void;
-  /** パネルでカーソルを乗せている要素。画面にも枠を出す */
+  /** Element hovered in the panel. Also gets a frame on the page */
   peek?: Element | null;
-  /** 枠の上に重ねるもの（ハンドルなど） */
+  /** Content layered on top of the frame (handles etc.) */
   children?: React.ReactNode;
 };
 
@@ -38,7 +38,7 @@ const rectOf = (el: Element): Rect => {
   return { left: r.left, top: r.top, width: r.width, height: r.height };
 };
 
-/** DevTools のように、外側の余白・内側の余白・子要素の間を帯にする */
+/** Like DevTools, draw margin, padding and the gaps between children as bands */
 function spacingBands(el: Element): Band[] {
   const cs = el.ownerDocument.defaultView!.getComputedStyle(el);
   const n = (v: string) => Number.parseFloat(v) || 0;
@@ -60,7 +60,7 @@ function spacingBands(el: Element): Band[] {
     { kind: 'padding', left: inL, top: inT + pt, width: pl, height: inH - pt - pb },
     { kind: 'padding', left: inL + inW - pr, top: inT + pt, width: pr, height: inH - pt - pb },
   ];
-  // 子要素の間（gap）。隣り合う子の間の隙間を、横並びなら縦の帯、縦並びなら横の帯にする
+  // Gaps between children. Each gap between adjacent children becomes a vertical band in a row, a horizontal band in a column
   if (/flex|grid/.test(cs.display) && (n(cs.columnGap) || n(cs.rowGap))) {
     const kids = [...el.children].map(rectOf).filter((k) => k.width && k.height);
     for (let i = 0; i < kids.length - 1; i++) {
@@ -75,7 +75,7 @@ function spacingBands(el: Element): Band[] {
   return bands.filter((b) => b.width > 0.5 && b.height > 0.5);
 }
 
-/** 枠に完全に入った要素のうち、親は入っていないもの（一番外側）を返す */
+/** Return elements fully inside the box whose parent is not (the outermost ones) */
 function elementsInside(doc: Document, r: Rect): Element[] {
   const inside = (el: Element) => {
     const b = el.getBoundingClientRect();
@@ -91,7 +91,7 @@ export function Canvas(props: Props) {
   const [marquee, setMarquee] = useState<Rect | null>(null);
   const [transform, setTransform] = useState<string | undefined>();
   const wrapRef = useRef<HTMLDivElement>(null);
-  // iframe 側のリスナーは load のたびに付け直すので、最新の値は ref から読む
+  // iframe listeners are reattached on every load, so read the latest values from refs
   const latest = useRef(props);
   latest.current = props;
 
@@ -109,7 +109,7 @@ export function Canvas(props: Props) {
   }, [props.peek]);
   const shown = hover ?? peekBox;
 
-  // 選んだ要素の枠・余白の帯・表示中の URL は、スクロール・プレビュー・画面遷移で変わるので毎フレーム追う
+  // The selected element's frame, spacing bands and current URL change with scroll, preview and navigation, so track them every frame
   useEffect(() => {
     let raf = 0;
     let lastRoute = '';
@@ -122,7 +122,7 @@ export function Canvas(props: Props) {
       }
       const live = selectedEls.filter((el) => el.isConnected);
       const primary = live.at(-1);
-      // 選択枠は要素の角丸に合わせる（角丸を変えたときに形の違いが見えるように）
+      // Match the selection frame to the element's border radius (so the shape difference shows when radius changes)
       const next = {
         rects: live.map((el) => ({ ...rectOf(el), borderRadius: el.ownerDocument.defaultView!.getComputedStyle(el).borderRadius })),
         bands: primary ? spacingBands(primary) : [],
@@ -138,7 +138,7 @@ export function Canvas(props: Props) {
     return () => cancelAnimationFrame(raf);
   }, [frameRef, selectedEls]);
 
-  // 寄せる：要素の中心を画面の中心に持ってきて、周りに余裕を残して拡大する
+  // Zoom: bring the element's center to the screen center and scale up, leaving some room around it
   useEffect(() => {
     const el = selectedEls.at(-1);
     const wrap = wrapRef.current;
@@ -155,8 +155,8 @@ export function Canvas(props: Props) {
   const attach = () => {
     const doc = frameRef.current?.contentDocument;
     if (!doc) return;
-    // Mac のスクロールの跳ね返りで、枠やハンドルが画面とずれて見えるので止める
-    // <html> の属性を書くと Next.js のハイドレーションと食い違うので、DOM に出ないシートで当てる
+    // Mac scroll bounce makes frames and handles drift from the page, so disable it
+    // Writing attributes on <html> conflicts with Next.js hydration, so apply it via a sheet that does not appear in the DOM
     const win = doc.defaultView as (Window & typeof globalThis) | null;
     if (win && !doc.adoptedStyleSheets.some((x) => (x as CSSStyleSheet & { te?: boolean }).te)) {
       const sheet = new win.CSSStyleSheet() as CSSStyleSheet & { te?: boolean };
@@ -164,7 +164,7 @@ export function Canvas(props: Props) {
       sheet.te = true;
       doc.adoptedStyleSheets = [...doc.adoptedStyleSheets, sheet];
     }
-    // iframe の要素は親ウィンドウの Element とは別物なので instanceof では判定できない
+    // iframe elements are not the parent window's Element, so instanceof cannot be used
     const target = (e: Event) => {
       const node = e.composedPath()[0] as Node | undefined;
       return node?.nodeType === Node.ELEMENT_NODE ? (node as Element) : null;
@@ -172,7 +172,7 @@ export function Canvas(props: Props) {
     doc.addEventListener(
       'pointermove',
       (e) => {
-        // iframe の中の座標を、拡大率を戻してエディタの画面の座標に直して覚える
+        // Store the position inside the iframe converted to editor screen coordinates by undoing the zoom
         const frame = frameRef.current;
         if (frame) {
           const fr = frame.getBoundingClientRect();
@@ -188,8 +188,8 @@ export function Canvas(props: Props) {
       },
       true,
     );
-    // 選択中は画面側のクリック・押下を止める（ボタンが動いたりメニューが開いたりしないように）。
-    // ドラッグしたら矩形選択、動かさずに離したらクリックとして1つ選ぶ
+    // While selecting, block clicks and presses on the page (so buttons do not fire and menus do not open).
+    // Dragging starts a marquee selection; releasing without moving selects one element as a click
     let start: { x: number; y: number } | null = null;
     let dragged = false;
     const box = (e: MouseEvent): Rect => ({

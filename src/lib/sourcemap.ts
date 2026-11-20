@@ -1,7 +1,7 @@
 import { relativeToProject } from './project';
 
-// React の開発ビルドが要素ごとに持つ「作成場所」（_debugStack）を、ソースマップで元のファイル:行に戻す。
-// Turbopack のマップは sections を持つ形式（index map）なので、それも読む
+// Maps the "creation site" (_debugStack) that React dev builds keep per element back to the original file:line via source maps.
+// Turbopack maps use the sectioned format (index map), so that is handled too
 type RawMap = { sources: string[]; mappings: string };
 type IndexMap = { sections?: { offset: { line: number; column: number }; map: IndexMap }[] } & Partial<RawMap>;
 
@@ -33,7 +33,7 @@ function decodeVlq(segment: string): number[] {
   return out;
 }
 
-/** 0 始まりの生成側の行・列 → 元のファイルと 1 始まりの行 */
+/** 0-based generated line/column → original file and 1-based line */
 function lookup(map: RawMap, line: number, column: number): { source: string; line: number } | null {
   const lines = map.mappings.split(';');
   let src = 0;
@@ -46,7 +46,7 @@ function lookup(map: RawMap, line: number, column: number): { source: string; li
       if (!seg) continue;
       const v = decodeVlq(seg);
       genCol += v[0];
-      // 生成側の位置だけの区切りは「ここから先は対応なし」の印
+      // A segment with only a generated position marks "no mapping from here on"
       if (v.length < 4) {
         if (i === line && genCol <= column) best = null;
         continue;
@@ -68,7 +68,7 @@ function resolveIn(map: IndexMap, line: number, column: number): { source: strin
   return resolveIn(section.map, l, l === 0 ? column - section.offset.column : column);
 }
 
-/** スタックのうち、jsxDEV の次の行（要素を作ったコンポーネントの中）を取り出す */
+/** Take the stack line right after jsxDEV (inside the component that created the element) */
 function firstFrame(stack: string): { url: string; line: number; column: number } | null {
   for (const raw of stack.split('\n').slice(1)) {
     // Server Components (Next.js App Router) show up as about://React/Server/file:///…/.next/….js?17
@@ -82,12 +82,12 @@ function firstFrame(stack: string): { url: string; line: number; column: number 
 }
 
 /**
- * webpack の開発ビルド（eval-source-map）は、モジュールごとに eval した文字列の末尾にソースマップを埋めている。
- * 画面の iframe の webpackChunk からモジュールの関数を探し、その文字列から取り出す
+ * webpack dev builds (eval-source-map) embed a source map at the end of each module's eval'd string.
+ * Find the module function in the page iframe's webpackChunk and extract it from that string
  */
 async function webpackMap(url: string): Promise<IndexMap | null> {
   const id = decodeURIComponent(url.replace(/^webpack-internal:\/\/\//, ''));
-  // shortcut: エディタの iframe が1つだけである前提。iframe が増えたら呼び出し側から window を渡す
+  // shortcut: assumes the editor has a single iframe. If more are added, pass the window in from the caller
   const win = document.querySelector('iframe')?.contentWindow as (Window & Record<string, unknown>) | null;
   if (!win) return null;
   for (const key of Object.keys(win).filter((k) => k.startsWith('webpackChunk'))) {
@@ -123,18 +123,18 @@ export async function resolveStack(stack: string | undefined): Promise<string | 
 }
 
 /**
- * 要素を作った場所と、その部品を使っている場所を返す。
- * 例: { self: 'src/components/ui/card.tsx:42', usage: 'src/app/dashboard/page.tsx:88' }
+ * Return where the element was created and where its component is used.
+ * e.g. { self: 'src/components/ui/card.tsx:42', usage: 'src/app/dashboard/page.tsx:88' }
  */
-// biome-ignore lint: React の内部構造を読む
+// biome-ignore lint: reads React internals
 export const fiberOf = (el: Element): any => {
   const key = Object.keys(el).find((k) => k.startsWith('__reactFiber$'));
-  // biome-ignore lint: React の内部構造を読む
+  // biome-ignore lint: reads React internals
   return key ? (el as any)[key] : null;
 };
 
-/** その JSX を書いた場所のスタック。開発ビルドだけが持つ */
-// biome-ignore lint: React の内部構造を読む
+/** Stack of where that JSX was written. Only dev builds have it */
+// biome-ignore lint: reads React internals
 export const stackOf = (f: any): string | undefined => {
   // A client fiber has _debugStack; a Server Component's info object has debugStack
   const stack = f?._debugStack ?? f?.debugStack;
@@ -145,7 +145,7 @@ export const stackOf = (f: any): string | undefined => {
  * Server Components have no fibers in the browser. The element's owner chain still names them
  * ({ name: 'Card', env: 'Server', props, debugStack }), up to the first client component.
  */
-// biome-ignore lint: React の内部構造を読む
+// biome-ignore lint: reads React internals
 export function serverOwners(fiber: any): any[] {
   const out = [];
   for (let owner = fiber?._debugOwner; owner && 'env' in owner && out.length < 8; owner = owner.owner) out.push(owner);

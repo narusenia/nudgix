@@ -6,13 +6,13 @@ export type PropDef = {
   key: PropKey;
   group: Group;
   category: Category;
-  /** プレビューで上書きする CSS プロパティ */
+  /** CSS properties overridden during preview */
   css: string[];
-  /** 要素の現在値の読み方 */
+  /** How to read the element's current value */
   read?: (cs: CSSStyleDeclaration) => string;
 };
 
-/** 影の計算値から、色が透明か大きさが0の見えないレイヤー（Tailwind の ring の下地など）を落とす */
+/** Drop invisible layers from the computed shadow, with a transparent color or zero size (e.g. Tailwind's ring base) */
 export const visibleShadow = (value: string) =>
   value
     .split(/,(?![^(]*\))/)
@@ -42,13 +42,13 @@ export const PROPS: PropDef[] = [
   { key: 'boxShadow', group: 'effect', category: 'shadows', css: ['box-shadow'], read: (cs) => visibleShadow(cs.boxShadow) },
 ];
 
-/** 保存した名前からトークンを引く。一覧に無い名前は、パネルで直接入れた値（13px、#ff0000 など）として扱う */
+/** Look up a token by its saved name. Names not in the list are treated as values typed directly in the panel (13px, #ff0000 etc.) */
 export const tokenOf = (tokens: Tokens | null | undefined, category: Category, name: string | undefined): Token | undefined => {
   if (!name) return undefined;
   return tokens?.[category].find((x) => x.name === name) ?? { name, description: '', raw: true };
 };
 
-/** 直接入れた値を CSS の値に直す。単位の無い数は px にする（太さは数のまま）。当てられない値は null */
+/** Convert a directly typed value into a CSS value. Unitless numbers become px (except font weight). null if it cannot be applied */
 export function rawValue(prop: PropDef, input: string): string | null {
   const v = input.trim();
   if (!v || prop.key === 'textStyle') return null;
@@ -60,7 +60,7 @@ export const PROP_BY_KEY = Object.fromEntries(PROPS.map((p) => [p.key, p])) as R
 
 export const GROUPS: Group[] = ['color', 'text', 'space', 'size', 'radius', 'effect'];
 
-// プロンプトでは上下・左右がそろった余白を1行にまとめる
+// In the prompt, merge spacing with equal top/bottom and left/right into one line
 export const MERGES: { name: string; keys: PropKey[] }[] = [
   { name: 'padding', keys: ['paddingTop', 'paddingRight', 'paddingBottom', 'paddingLeft'] },
   { name: 'paddingBlock', keys: ['paddingTop', 'paddingBottom'] },

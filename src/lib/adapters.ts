@@ -4,12 +4,13 @@ import { declaredValue, matchedRules, rootVariables } from './css';
 import type { PropDef } from './props';
 import type { Category, PropKey, Token, Tokens } from './types';
 
-export type AdapterId = 'css-vars' | 'tailwind-v4';
+export type AdapterId = 'css-vars' | 'tailwind-v4' | 'panda';
 
 export type Adapter = {
   id: AdapterId;
   /** Token list. Either read by the server (Tailwind) or collected from the page's stylesheets (CSS variables) */
-  tokens: (doc: Document, fromServer: Tokens | null) => Tokens;
+  // biome-ignore lint: each adapter knows the shape its server part sends
+  tokens: (doc: Document, fromServer: any) => Tokens;
   /** Determine the applied token from how the element is styled (class or CSS rule). list holds tokens with the same computed value */
   bySource: (el: Element, prop: PropDef, list: Token[]) => Token | undefined;
   /** How a token is written in the prompt. key is a PropKey or a merged name (padding, paddingBlock, paddingInline) */
@@ -90,7 +91,7 @@ const tailwindV4: Adapter = {
   // The server reads the theme (node_modules/tailwindcss/theme.css and the project's @theme blocks)
   // Tailwind may emit a theme color in another color space than the theme source (lab() for oklch()), so when the page
   // defines the variable, use it; unused tokens keep the resolved value
-  tokens(doc, fromServer) {
+  tokens(doc, fromServer: Tokens | null) {
     if (!fromServer) return emptyTokens();
     const root = doc.defaultView!.getComputedStyle(doc.documentElement);
     const onPage = (t: Token) => (t.variable && root.getPropertyValue(t.variable).trim() ? { ...t, css: `var(${t.variable})` } : t);
@@ -110,7 +111,52 @@ const tailwindV4: Adapter = {
   hints: (el) => [...el.classList].slice(0, 8),
 };
 
-const ADAPTERS: Record<AdapterId, Adapter> = { 'css-vars': cssVars, 'tailwind-v4': tailwindV4 };
+// Panda turns every token into a variable named after its path (colors.brand.500 → --colors-brand-500) and every
+// utility class uses it (.p_6 { padding: var(--spacing-6) }), so tokens and detection both go through variables.
+// The server sends the token paths from styled-system/tokens, which tell camelCase and nested keys apart
+const PANDA: Record<string, Category> = {
+  colors: 'colors',
+  spacing: 'spacing',
+  sizes: 'sizes',
+  radii: 'radii',
+  'font-sizes': 'fontSizes',
+  'font-weights': 'fontWeights',
+  shadows: 'shadows',
+};
+const pandaKey = (s: string) =>
+  s
+    .replace(/\\/g, '')
+    .replace(/([a-z\d])([A-Z])/g, '$1-$2')
+    .replace(/\./g, '-')
+    .toLowerCase();
+
+const panda: Adapter = {
+  id: 'panda',
+  tokens(doc, fromServer: { paths: string[] } | null) {
+    const paths = new Map((fromServer?.paths ?? []).map((p) => [`--${pandaKey(p)}`, p]));
+    const root = doc.defaultView!.getComputedStyle(doc.documentElement);
+    const out = emptyTokens();
+    for (const name of rootVariables(doc)) {
+      const m = name.match(/^--(colors|spacing|sizes|radii|font-sizes|font-weights|shadows)-(.+)$/);
+      const value = m && !/color-?palette/i.test(name) ? root.getPropertyValue(name).trim() : '';
+      if (!m || !value) continue;
+      const path = paths.get(pandaKey(name));
+      // shortcut: without the paths (codegen not run) every dash reads as a dot, which is wrong for camelCase keys
+      const tokenName = path ? path.slice(path.indexOf('.') + 1) : m[2].replace(/\\?[.-]/g, '.');
+      out[PANDA[m[1]]].push({ name: tokenName, css: `var(${CSS.escape(name)})`, description: value });
+    }
+    return out;
+  },
+  bySource(el, prop, list) {
+    const name = declaredValue(el, prop.css[0]).match(/var\(\s*(--[\w\\.-]+)/)?.[1];
+    return name ? list.find((t) => t.css && pandaKey(t.css.slice(4, -1)) === pandaKey(name)) : undefined;
+  },
+  format: (_key, name) => `'${name}'`,
+  written: (_key, name) => [`'${name}'`, `"${name}"`],
+  hints: (el) => [...el.classList].slice(0, 8),
+};
+
+const ADAPTERS: Record<AdapterId, Adapter> = { 'css-vars': cssVars, 'tailwind-v4': tailwindV4, panda };
 
 let current: Adapter = cssVars;
 export const adapter = () => current;

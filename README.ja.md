@@ -29,6 +29,7 @@ nudgixは画面を枠の中に出し、その上で次のことを試せます�
 | アダプター | トークン | プロンプトでの書き方 |
 |---|---|---|
 | `tailwind-v4` | Tailwindの既定のテーマと、プロジェクトの`@theme` | ユーティリティ：`pt-4`、`rounded-xl`、`bg-brand-500` |
+| `panda` | Panda CSSのトークン。名前は`panda codegen`で出る`styled-system/tokens`から取ります | トークンのパス：`'brand.500'`、`'6'` |
 | `css-vars` | 画面のスタイルシートで`:root`に書かれたカスタムプロパティ。どの構成でも動きます | 変数名：`--space-4` |
 
 ## オプション
@@ -51,7 +52,7 @@ Claude Codeを使う人向けの、入れなくてもよい機能です。プロ
 
 ## 制限
 
-- 書いた場所が分かるのは、Reactの開発ビルドのときです。確かめているのはTurbopackかwebpackで動くNext.jsで、ほかのReactの構成でも動くかもしれません。Reactを使っていない画面では、要素に当たっているCSSの規則の場所を出します。ただし、devサーバーがCSSのファイル名を教えてくれるとき（Viteなど）に限ります
+- 書いた場所が分かるのは、Reactの開発ビルドのときです。確かめているのはNext.js（Turbopackかwebpack）とViteで、ほかのReactの構成でも動くかもしれません。Reactを使っていない画面では、要素に当たっているCSSの規則の場所を出します。ただし、devサーバーがCSSのファイル名を教えてくれるとき（Viteなど）に限ります
 - 画面のアプリ自体がViteで動いていると、Storybookのギャラリーは使えません。どちらも同じパスを使うためです
 - 変更はブラウザに保存し、画面の中の位置で要素を探し直します。画面の構造が変わると見つからなくなることがあります
 
@@ -64,7 +65,7 @@ pnpm build                                 # エディタをdist/にビルドす
 node server/tailwind.test.mjs
 ```
 
-見本アプリは、それぞれのフォルダで`pnpm install`と`pnpm dev`を実行してください。`examples/next-tailwind-v4`は3100番、`examples/vite-css`は5173番で動きます。
+見本アプリは、それぞれのフォルダで`pnpm install`と`pnpm dev`を実行してください。`examples/next-tailwind-v4`は3100番、`examples/vite-css`は5173番、`examples/vite-react-panda`は5174番で動きます。
 
 ## ライセンス
 

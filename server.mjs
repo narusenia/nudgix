@@ -17,6 +17,15 @@ const toUrl = (v) => new URL(/^\d+$/.test(v) ? `http://localhost:${v}` : v);
 const portOf = (url) => Number(url.port || 80);
 
 /** Reads package.json and guesses the framework, the style system and the dev command. */
+/** Token paths (colors.brand.500) from Panda's codegen output. Empty until `panda codegen` has run */
+async function loadPandaPaths(dir) {
+  const config = await Promise.any(['ts', 'mjs', 'js', 'cjs'].map((ext) => readFile(path.join(dir, `panda.config.${ext}`), 'utf8'))).catch(() => '');
+  const outdir = config.match(/outdir:\s*['"]([^'"]+)/)?.[1] ?? 'styled-system';
+  const source = await readFile(path.join(dir, outdir, 'tokens/index.js'), 'utf8').catch(() => '');
+  const json = source.match(/const tokens = (\{.*\})\s*$/m)?.[1];
+  return json ? Object.keys(JSON.parse(json)) : [];
+}
+
 export async function inspectProject(dir) {
   let pkg = {};
   try {
@@ -25,7 +34,7 @@ export async function inspectProject(dir) {
   const deps = { ...pkg.dependencies, ...pkg.devDependencies };
   const framework = deps.next ? 'next' : deps.astro ? 'astro' : deps.vite ? 'vite' : 'other';
   const tailwind = String(deps.tailwindcss ?? deps['@tailwindcss/postcss'] ?? deps['@tailwindcss/vite'] ?? '');
-  const adapter = /^\D*4/.test(tailwind) ? 'tailwind-v4' : 'css-vars';
+  const adapter = deps['@pandacss/dev'] ? 'panda' : /^\D*4/.test(tailwind) ? 'tailwind-v4' : 'css-vars';
   const runner = (await exists(path.join(dir, 'pnpm-lock.yaml')))
     ? 'pnpm'
     : (await exists(path.join(dir, 'yarn.lock')))
@@ -106,7 +115,8 @@ export async function startServer({ port = 4747, target, dir = process.cwd(), st
     if (url === `${BASE}api/tokens`) {
       try {
         // css-vars reads the tokens from the page in the browser, so the server has nothing to send
-        const tokens = project.adapter === 'tailwind-v4' ? await loadThemeTokens(DIR) : null;
+        const tokens =
+          project.adapter === 'tailwind-v4' ? await loadThemeTokens(DIR) : project.adapter === 'panda' ? { paths: await loadPandaPaths(DIR) } : null;
         sendJson(res, 200, { adapter: project.adapter, tokens });
       } catch (error) {
         sendJson(res, 500, { error: String(error?.message ?? error) });

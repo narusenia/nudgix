@@ -118,3 +118,11 @@ Styles are Tailwind CSS v4 utilities. Tokens come from the theme (`@theme` in th
 - `paddingBlock` is `py-*`, `paddingInline` `px-*`, `padding` `p-*`. Replace the utility that sets the value now (for example `p-6` → `p-4` when all sides change, or add `pt-4` next to `p-6` when only the top changes)
 - Keep variants (`md:`, `hover:`) as they are unless the change says otherwise
 - A value in parentheses has no utility in the theme. Use an arbitrary value (`p-[13px]`) only after asking
+
+### panda
+
+Styles are Panda CSS style objects (`css({ ... })`, `styled.div`, recipes or JSX style props). Tokens come from the Panda theme (`panda.config` and its presets).
+
+- Values are token paths: `'brand.500'`, `'6'`, `'xl'`. The line names the property in camelCase (`backgroundColor`, `paddingTop`); the code may use a shorthand for it (`bg`, `pt`, `rounded`, `shadow`)
+- Change the value in the style object that sets the property now. If it comes from a recipe variant, change the recipe only when every use should change, otherwise ask
+- A value in parentheses has no token. Ask before writing a raw value

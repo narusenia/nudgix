@@ -29,6 +29,7 @@ nudgix reads tokens through an adapter, picked from `package.json`.
 | Adapter | Tokens | Prompt |
 |---|---|---|
 | `tailwind-v4` | Tailwind's default theme and the project's `@theme` blocks | Utilities: `pt-4`, `rounded-xl`, `bg-brand-500` |
+| `panda` | Panda CSS tokens, named from `styled-system/tokens` after `panda codegen` | Token paths: `'brand.500'`, `'6'` |
 | `css-vars` | Custom properties on `:root` in the page's stylesheets. Works with any setup | Variable names: `--space-4` |
 
 ## Options
@@ -51,7 +52,7 @@ This part is optional and only for Claude Code. The prompt panel can install the
 
 ## Limits
 
-- Source locations need a React development build. Next.js with Turbopack or webpack is tested; other React setups may work. Without React, nudgix points at the CSS rule that styles the element, when the dev server tells which file it came from (Vite does)
+- Source locations need a React development build. Next.js (Turbopack or webpack) and Vite are tested; other React setups may work. Without React, nudgix points at the CSS rule that styles the element, when the dev server tells which file it came from (Vite does)
 - The Storybook gallery does not work when the app itself runs on Vite, because both serve the same paths
 - Changes are stored in the browser and found again by their position in the page, so they can get lost when the page structure changes
 
@@ -64,7 +65,7 @@ pnpm build                                 # builds the editor into dist/
 node server/tailwind.test.mjs
 ```
 
-The examples need their own `pnpm install` and `pnpm dev`. `examples/next-tailwind-v4` runs on port 3100, `examples/vite-css` on 5173.
+The examples need their own `pnpm install` and `pnpm dev`. `examples/next-tailwind-v4` runs on port 3100, `examples/vite-css` on 5173, `examples/vite-react-panda` on 5174.
 
 ## License
 

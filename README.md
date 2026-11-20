@@ -2,35 +2,70 @@
 
 Nudge your local UI in the browser, then hand the list of tweaks to Claude Code as a prompt. nudgix never edits your source.
 
+[日本語](README.ja.md)
+
+![Picking a background color for a card. The page updates while the cursor is on a token](docs/images/tokens.jpg)
+
 ```sh
 cd your-app
 npm run dev          # start your dev server as usual
 npx nudgix start     # opens the editor at http://localhost:4747/__nudgix/
 ```
 
-nudgix finds the dev server from your framework's default port (Next.js 3000, Vite 5173, Astro 4321). Pass `--target 3001` if it runs elsewhere.
+nudgix shows your app in a frame and lets you try changes on it:
 
-## Options
+- Swap colors, type, spacing, size, radius and shadows for your project's tokens. The page updates while the cursor is on a token
+- Drag spacing bands and handles on the page, reorder or move elements, edit text, remove elements, and offset them visually
+- Place Storybook stories into the page and change their props
+- See the selection as HTML and React (components, props and the source lines that wrote it), with the lines your changes will touch marked
+- Copy everything as a prompt, one block per element: where it is written and what to change
 
-| Option | Default |
-|---|---|
-| `--port` | `4747` |
-| `--target` | the framework's default port |
-| `--dir` | the current folder |
-| `--storybook` | `6006` |
-| `--no-open` | opens the browser |
+![The code drawer and the Code tab show where the card is written and used](docs/images/code.jpg)
 
 ## Style systems
 
-| Adapter | How tokens are read |
+nudgix reads tokens through an adapter, picked from `package.json`.
+
+| Adapter | Tokens | Prompt |
+|---|---|---|
+| `tailwind-v4` | Tailwind's default theme and the project's `@theme` blocks | Utilities: `pt-4`, `rounded-xl`, `bg-brand-500` |
+| `css-vars` | Custom properties on `:root` in the page's stylesheets. Works with any setup | Variable names: `--space-4` |
+
+## Options
+
+```sh
+npx nudgix start --target 3001 --port 4800
+```
+
+| Option | Default |
 |---|---|
-| `css-vars` | Custom properties on `:root` in the page's stylesheets. Works with any setup |
-| `tailwind-v4` | Tailwind's default theme and the project's `@theme` blocks. Prompts are written as utilities (`pt-4`, `rounded-xl`) |
+| `--target` | The port in your `dev` script (`next dev -p 3100`), else the framework's default: Next.js 3000, Vite 5173, Astro 4321 |
+| `--port` | `4747` |
+| `--dir` | The current folder |
+| `--storybook` | `6006` |
+| `--no-open` | Opens the browser |
+
+## Claude Code skill
+
+The prompt panel can install the `/apply-nudges` skill into your project (`.claude/skills/apply-nudges/`). With it, prompts drop the instructions and are just `/apply-nudges`, the adapter and the changes. An existing skill is never overwritten.
+
+## Limits
+
+- Source locations need a React development build. Next.js with Turbopack or webpack is tested; other React setups may work. Without React, nudgix points at the CSS rule that styles the element, when the dev server tells which file it came from (Vite does)
+- The Storybook gallery does not work when the app itself runs on Vite, because both serve the same paths
+- Changes are stored in the browser and found again by their position in the page, so they can get lost when the page structure changes
 
 ## Development
 
 ```sh
 pnpm install
-pnpm dev --dir examples/vite-css   # runs the editor from source with Vite
-pnpm build                         # builds the editor into dist/
+pnpm dev --dir examples/next-tailwind-v4   # runs the editor from source with Vite
+pnpm build                                 # builds the editor into dist/
+node server/tailwind.test.mjs
 ```
+
+The examples need their own `pnpm install` and `pnpm dev`. `examples/next-tailwind-v4` runs on port 3100, `examples/vite-css` on 5173.
+
+## License
+
+MIT

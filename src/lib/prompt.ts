@@ -4,7 +4,7 @@ import { MERGES, PROP_BY_KEY, tokenOf } from './props';
 import type { Change, Detection, PropKey, Tokens } from './types';
 
 /** プロンプト用の短い「現在」。推定は末尾に ? を付ける */
-export function shortDetection(d: Detection, key: PropKey): string {
+export function shortDetection(d: Detection, key: string): string {
   const f = (name: string) => adapter().format(key, name);
   if (d.how === 'class') return f(d.name);
   if (d.how === 'value') {
@@ -21,13 +21,14 @@ function changeLines(change: Change, tokens: Tokens): string[] {
   const props = { ...change.props };
   const from = (key: PropKey) => shortDetection(change.baseline[key], key);
   // トークンでない値（パネルで直接入れた値）は、「現在」と同じく括弧で包んで書く
-  const shown = (key: PropKey, v: string) => (tokenOf(tokens, PROP_BY_KEY[key].category, v)?.raw ? `(${v})` : adapter().format(key, v));
+  const shown = (key: PropKey, v: string, as: string = key) => (tokenOf(tokens, PROP_BY_KEY[key].category, v)?.raw ? `(${v})` : adapter().format(as, v));
   const lines: string[] = [];
   for (const merge of MERGES) {
     const values = merge.keys.map((k) => props[k]);
-    const froms = merge.keys.map(from);
+    // Compare what was detected, not how it is written (Tailwind writes pt-4 and pb-4 for the same token)
+    const froms = merge.keys.map((k) => JSON.stringify(change.baseline[k]));
     if (values.every((v) => v && v === values[0]) && froms.every((f) => f === froms[0])) {
-      lines.push(`${merge.name} ${froms[0]}→${shown(merge.keys[0], values[0]!)}`);
+      lines.push(`${merge.name} ${shortDetection(change.baseline[merge.keys[0]], merge.name)}→${shown(merge.keys[0], values[0]!, merge.name)}`);
       for (const k of merge.keys) delete props[k];
     }
   }

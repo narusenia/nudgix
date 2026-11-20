@@ -6,6 +6,8 @@ export type Token = {
   css?: string;
   /** textStyles のように、複数のプロパティをまとめて当てるトークン。CSS プロパティ → 値 */
   style?: Record<string, string>;
+  /** The CSS variable behind the token. When the page defines it, previews use var() so values match the page exactly */
+  variable?: string;
   /** 一覧を分けて見せるときの見出し */
   group?: string;
   description: string;

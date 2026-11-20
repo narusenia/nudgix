@@ -3,6 +3,7 @@ import { useT } from '../i18n';
 import { deltaText } from '../lib/format';
 import { componentChain, resolveToken } from '../lib/inspect';
 import { PROP_BY_KEY, tokenOf } from '../lib/props';
+import { adapter } from '../lib/adapters';
 import { shortDetection } from '../lib/prompt';
 import { countOf, type Change, type LayoutKey, type PropKey, type Tokens } from '../lib/types';
 import { IconButton, Tip } from './IconButton';
@@ -192,7 +193,7 @@ function ChangeRow({ propKey, to, change, tokens, el }: { propKey: PropKey; to: 
       </span>
       <span className={s.to}>
         <Specimen category={prop.category} value={toValue} />
-        <span className={s.ellipsis}>{to}</span>
+        <span className={s.ellipsis}>{token?.raw ? to : adapter().format(propKey, to)}</span>
         {delta ? <span className={s.delta}>{delta}</span> : null}
       </span>
     </div>

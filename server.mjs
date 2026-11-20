@@ -38,7 +38,8 @@ export async function inspectProject(dir) {
   // so another app running on a common port is never picked by mistake
   const scriptPort = Number(pkg.scripts?.dev?.match(/(?:-p|--port)[\s=]+(\d+)/)?.[1]);
   const ports = scriptPort ? [scriptPort] : { next: [3000], astro: [4321], vite: [5173], other: [3000, 5173, 4321, 8080, 8000] }[framework];
-  return { framework, adapter, devCommand, ports };
+  const storybook = Object.keys(deps).some((d) => d === 'storybook' || d.startsWith('@storybook/'));
+  return { framework, adapter, devCommand, ports, storybook };
 }
 
 export async function startServer({ port = 4747, target, dir = process.cwd(), storybook = '6006', open = true } = {}) {
@@ -49,8 +50,9 @@ export async function startServer({ port = 4747, target, dir = process.cwd(), st
   const STORYBOOK = toUrl(String(storybook));
   // Storybook (Vite) asks for these paths. With a Vite app they collide with the app's own, so the gallery only works with other frameworks.
   // shortcut: no Storybook gallery for Vite apps; route by a path prefix once Storybook can be served under one
+  // Only for projects that use Storybook, so another project's Storybook on the same port is never shown
   const STORYBOOK_PATH =
-    project.framework === 'vite' || project.framework === 'astro'
+    !project.storybook || project.framework === 'vite' || project.framework === 'astro'
       ? null
       : /^\/(iframe\.html|index\.json|vite-inject-mocker-entry\.js|@vite\/|@id\/|@fs\/|@react-refresh|node_modules\/|src\/|\.storybook\/|sb-|storybook-server-channel|virtual:|__vite)/;
 

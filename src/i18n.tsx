@@ -27,6 +27,7 @@ const ja = {
   // Short names used inside panel sections. Drops words the section heading already says (text, background)
   propsShort: { textStyle: 'スタイル', fontSize: 'サイズ', color: '色', backgroundColor: '背景', borderColor: '枠線' } as Partial<Record<PropKey, string>>,
   groups: { color: '色', text: '文字', space: '余白', size: 'サイズ', radius: '角丸', effect: '影' } satisfies Record<Group, string>,
+  quote: (s: string) => `「${s}」`,
   command: 'コマンド',
   themeToggle: 'ライト / ダーク',
   language: '言語',
@@ -173,6 +174,7 @@ const en: Dict = {
   },
   propsShort: { textStyle: 'Style', fontSize: 'Size', color: 'Color', backgroundColor: 'Fill', borderColor: 'Stroke' } as Partial<Record<PropKey, string>>,
   groups: { color: 'Color', text: 'Text', space: 'Spacing', size: 'Size', radius: 'Radius', effect: 'Shadow' },
+  quote: (s: string) => `"${s}"`,
   command: 'Command',
   themeToggle: 'Light / Dark',
   language: 'Language',

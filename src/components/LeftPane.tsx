@@ -88,7 +88,7 @@ export function ChangeList({ changes, tokens, selectedEl, onSelect, onRevert, on
                 <button type="button" className={s.changeTitleButton} disabled={gone} onClick={() => onSelect(el)}>
                   <div className={s.changeTitle}>
                     {change.insert ? `${change.insert.title.split('/').at(-1)} › ${change.insert.name}` : (info.components[0] ?? info.tag)}
-                    {!change.insert && info.text ? `「${info.text.slice(0, 20)}」` : ''}
+                    {!change.insert && info.text ? t.quote(info.text.slice(0, 20)) : ''}
                   </div>
                   <div className={s.changeWhere}>
                     {change.insert?.importPath.replace(/^\.\//, '') ?? info.source?.self ?? `${info.route} · ${info.components.slice(1, 3).join(' < ') || info.tag}`}

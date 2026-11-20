@@ -157,7 +157,7 @@ export function annotate(snippet: Snippet, change: Change | undefined, t: Dict):
   }
   if (change.text?.from) {
     snippet.lines.forEach((line, i) => {
-      if (line.includes(change.text!.from)) add(i, `${t.text} → 「${change.text!.to}」`);
+      if (line.includes(change.text!.from)) add(i, `${t.text} → ${t.quote(change.text!.to)}`);
     });
   }
   return notes;

@@ -122,7 +122,7 @@ export function PropertyPanel(props: Props) {
             <Group size={13} />
           </IconButton>
         </div>
-        {info.text && count === 1 ? <div className={s.targetText}>「{info.text}」</div> : null}
+        {info.text && count === 1 ? <div className={s.targetText}>{t.quote(info.text)}</div> : null}
         <div className={`${s.seg} ${s.panelTabs}`}>
           {(['props', 'code'] as const).map((k) => (
             <button key={k} type="button" className={s.segItem} data-pressed={tab === k ? '' : undefined} onClick={() => pickTab(k)}>

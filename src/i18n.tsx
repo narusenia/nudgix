@@ -242,7 +242,7 @@ const en: Dict = {
   copyHtml: 'Copy HTML',
   createdAt: 'Written at',
   usedAt: 'Used at',
-  usages: (name: string, n: number) => (n ? `<${name}> is used in ${n} places` : `No uses of <${name}> found`),
+  usages: (name: string, n: number) => (n ? `<${name}> is used in ${n} ${n === 1 ? 'place' : 'places'}` : `No uses of <${name}> found`),
   tokenClasses: 'Token classes',
   storyJsx: 'JSX of the inserted component',
   noSource: 'Source location unknown',

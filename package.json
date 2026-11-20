@@ -6,7 +6,7 @@
   "type": "module",
   "repository": { "type": "git", "url": "git+https://github.com/narusenia/nudgix.git" },
   "bin": { "nudgix": "bin/nudgix.mjs" },
-  "files": ["bin", "server.mjs", "server", "dist", "skills"],
+  "files": ["bin", "server.mjs", "server", "!server/*.test.mjs", "dist", "skills"],
   "engines": { "node": ">=20" },
   "scripts": {
     "dev": "NUDGIX_DEV=1 node bin/nudgix.mjs start",

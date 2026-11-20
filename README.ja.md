@@ -30,6 +30,7 @@ nudgixは画面を枠の中に出し、その上で次のことを試せます�
 |---|---|---|
 | `tailwind-v4` | Tailwindの既定のテーマと、プロジェクトの`@theme` | ユーティリティ：`pt-4`、`rounded-xl`、`bg-brand-500` |
 | `panda` | Panda CSSのトークン。名前は`panda codegen`で出る`styled-system/tokens`から取ります | トークンのパス：`'brand.500'`、`'6'` |
+| `stylex` | `*.stylex.*`ファイルの`defineVars`。画面の変数とは値で突き合わせます | 変数：`colors.brand`、`space.s4` |
 | `css-vars` | 画面のスタイルシートで`:root`に書かれたカスタムプロパティ。どの構成でも動きます | 変数名：`--space-4` |
 
 ## オプション
@@ -63,9 +64,10 @@ pnpm install
 pnpm dev --dir examples/next-tailwind-v4   # エディタをソースからViteで動かす
 pnpm build                                 # エディタをdist/にビルドする
 node server/tailwind.test.mjs
+node server/stylex.test.mjs
 ```
 
-見本アプリは、それぞれのフォルダで`pnpm install`と`pnpm dev`を実行してください。`examples/next-tailwind-v4`は3100番、`examples/vite-css`は5173番、`examples/vite-react-panda`は5174番で動きます。
+見本アプリは、それぞれのフォルダで`pnpm install`と`pnpm dev`を実行してください。`examples/next-tailwind-v4`は3100番、`examples/vite-css`は5173番、`examples/vite-react-panda`は5174番、`examples/vite-react-stylex`は5175番で動きます。
 
 ## ライセンス
 

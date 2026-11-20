@@ -30,6 +30,7 @@ nudgix reads tokens through an adapter, picked from `package.json`.
 |---|---|---|
 | `tailwind-v4` | Tailwind's default theme and the project's `@theme` blocks | Utilities: `pt-4`, `rounded-xl`, `bg-brand-500` |
 | `panda` | Panda CSS tokens, named from `styled-system/tokens` after `panda codegen` | Token paths: `'brand.500'`, `'6'` |
+| `stylex` | `defineVars` in `*.stylex.*` files, matched to the page's variables by value | Variables: `colors.brand`, `space.s4` |
 | `css-vars` | Custom properties on `:root` in the page's stylesheets. Works with any setup | Variable names: `--space-4` |
 
 ## Options
@@ -63,9 +64,10 @@ pnpm install
 pnpm dev --dir examples/next-tailwind-v4   # runs the editor from source with Vite
 pnpm build                                 # builds the editor into dist/
 node server/tailwind.test.mjs
+node server/stylex.test.mjs
 ```
 
-The examples need their own `pnpm install` and `pnpm dev`. `examples/next-tailwind-v4` runs on port 3100, `examples/vite-css` on 5173, `examples/vite-react-panda` on 5174.
+The examples need their own `pnpm install` and `pnpm dev`. `examples/next-tailwind-v4` runs on port 3100, `examples/vite-css` on 5173, `examples/vite-react-panda` on 5174, `examples/vite-react-stylex` on 5175.
 
 ## License
 

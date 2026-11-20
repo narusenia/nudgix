@@ -126,3 +126,11 @@ Styles are Panda CSS style objects (`css({ ... })`, `styled.div`, recipes or JSX
 - Values are token paths: `'brand.500'`, `'6'`, `'xl'`. The line names the property in camelCase (`backgroundColor`, `paddingTop`); the code may use a shorthand for it (`bg`, `pt`, `rounded`, `shadow`)
 - Change the value in the style object that sets the property now. If it comes from a recipe variant, change the recipe only when every use should change, otherwise ask
 - A value in parentheses has no token. Ask before writing a raw value
+
+### stylex
+
+Styles are StyleX (`stylex.create` and `stylex.props`). Tokens are the variables from `defineVars` in the project's `*.stylex.*` files.
+
+- Values are written as the imported variable: `colors.brand`, `space.s4`, `radii.xl`. Import the group from its `.stylex` file if the component does not yet
+- Change the property in the `stylex.create` entry that styles the element. If that entry is shared with other elements and only this one should change, ask whether to add a new entry
+- A value in parentheses has no variable. Ask before writing a raw value

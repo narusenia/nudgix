@@ -58,14 +58,18 @@ export function declaredValue(el: Element, css: string): string {
   return '';
 }
 
+/** Rules on :root and the like, where custom properties are usually declared */
+export function rootRules(doc: Document): CSSStyleRule[] {
+  const out: CSSStyleRule[] = [];
+  walkRules(doc, (rule) => {
+    if (/(^|,)\s*(:root|html|:host)\b/.test(rule.selectorText)) out.push(rule);
+  });
+  return out;
+}
+
 /** Names of custom properties declared on :root and the like */
 export function rootVariables(doc: Document): string[] {
-  const names = new Set<string>();
-  walkRules(doc, (rule) => {
-    if (!/(^|,)\s*(:root|html|:host)\b/.test(rule.selectorText)) return;
-    for (const prop of rule.style) if (prop.startsWith('--')) names.add(prop);
-  });
-  return [...names];
+  return [...new Set(rootRules(doc).flatMap((rule) => [...rule.style].filter((prop) => prop.startsWith('--'))))];
 }
 
 /** CSS file that declared the rule. Vite's dev server injects <style data-vite-dev-id="/absolute/path">, which tells us */

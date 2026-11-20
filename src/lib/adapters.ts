@@ -1,10 +1,10 @@
 // Keeps the differences between styling systems in one place. The base is css-vars (reads only the page's CSS variables and CSS rules),
 // which works with any setup. Adapters for Tailwind and others improve how tokens are read and how prompts are written
-import { declaredValue, matchedRules, rootVariables } from './css';
+import { declaredValue, matchedRules, rootRules, rootVariables } from './css';
 import type { PropDef } from './props';
 import type { Category, PropKey, Token, Tokens } from './types';
 
-export type AdapterId = 'css-vars' | 'tailwind-v4' | 'panda';
+export type AdapterId = 'css-vars' | 'tailwind-v4' | 'panda' | 'stylex';
 
 export type Adapter = {
   id: AdapterId;
@@ -156,7 +156,58 @@ const panda: Adapter = {
   hints: (el) => [...el.classList].slice(0, 8),
 };
 
-const ADAPTERS: Record<AdapterId, Adapter> = { 'css-vars': cssVars, 'tailwind-v4': tailwindV4, panda };
+// StyleX hashes variable names (--x17ej7d8) and class names, so only the source knows colors.brand.
+// Each defineVars becomes one `:root, .xhash { … }` rule listing its keys in source order. The server sends the
+// groups parsed from *.stylex.* files; here each group is matched to the rule whose values agree best
+type StylexGroup = { name: string; vars: { key: string; value: string | null }[] };
+const norm = (v: string) =>
+  v
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, ' ')
+    .replace(/^#([\da-f])\1([\da-f])\2([\da-f])\3$/, '#$1$2$3')
+    .replace(/^(white)$/, '#fff')
+    .replace(/^(black)$/, '#000');
+
+const stylex: Adapter = {
+  id: 'stylex',
+  tokens(doc, fromServer: { groups: StylexGroup[] } | null) {
+    const out = emptyTokens();
+    const root = doc.defaultView!.getComputedStyle(doc.documentElement);
+    const rules = rootRules(doc).map((rule) => [...rule.style].filter((p) => p.startsWith('--')).map((p) => [p, rule.style.getPropertyValue(p)] as const));
+    const used = new Set<number>();
+    for (const group of fromServer?.groups ?? []) {
+      let best = -1;
+      let bestScore = 0;
+      rules.forEach((vars, i) => {
+        if (used.has(i) || vars.length !== group.vars.length) return;
+        const score = group.vars.filter((v, j) => v.value !== null && norm(v.value) === norm(vars[j][1])).length;
+        if (score > bestScore) [best, bestScore] = [i, score];
+      });
+      if (best < 0) continue;
+      used.add(best);
+      group.vars.forEach((v, j) => {
+        const variable = rules[best][j][0];
+        const name = `${group.name}.${v.key}`;
+        const value = root.getPropertyValue(variable).trim();
+        // categoryOf reads words like radius or font-size from the name, so give it a kebab-case one
+        const category = value ? categoryOf(`--${name.replace(/([a-z\d])([A-Z])/g, '$1-$2').replace(/\./g, '-')}`, value) : null;
+        if (category) out[category].push({ name, css: `var(${variable})`, description: value });
+      });
+    }
+    return out;
+  },
+  bySource(el, prop, list) {
+    const name = declaredValue(el, prop.css[0]).match(/var\(\s*(--[\w-]+)/)?.[1];
+    return name ? list.find((t) => t.css === `var(${name})`) : undefined;
+  },
+  format: (_key, name) => name,
+  written: (_key, name) => [name],
+  // Class names are hashes, so they say nothing to a reader
+  hints: () => [],
+};
+
+const ADAPTERS: Record<AdapterId, Adapter> = { 'css-vars': cssVars, 'tailwind-v4': tailwindV4, panda, stylex };
 
 let current: Adapter = cssVars;
 export const adapter = () => current;

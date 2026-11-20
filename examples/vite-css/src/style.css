@@ -1,0 +1,95 @@
+body {
+  margin: 0;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font: var(--font-size-md) / 1.6 system-ui, sans-serif;
+}
+
+.site-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-4) var(--space-6);
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.logo {
+  font-weight: var(--font-weight-bold);
+}
+
+.nav {
+  display: flex;
+  gap: var(--space-4);
+}
+
+.nav a {
+  color: var(--color-text-muted);
+  text-decoration: none;
+}
+
+.page {
+  max-width: var(--size-content);
+  margin: 0 auto;
+  padding: var(--space-12) var(--space-6);
+}
+
+.hero__title {
+  margin: 0 0 var(--space-3);
+  font-size: var(--font-size-xl);
+}
+
+.hero__lead {
+  margin: 0 0 var(--space-6);
+  color: var(--color-text-muted);
+}
+
+.button {
+  padding: var(--space-2) var(--space-4);
+  border: 0;
+  border-radius: var(--radius-md);
+  font: inherit;
+}
+
+.button--primary {
+  background: var(--color-accent);
+  color: var(--color-surface);
+}
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-4);
+  margin-top: var(--space-12);
+}
+
+.card {
+  padding: var(--space-6);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.card__title {
+  margin: 0 0 var(--space-2);
+  font-size: var(--font-size-lg);
+}
+
+.card__body {
+  margin: 0 0 var(--space-4);
+  color: var(--color-text-muted);
+}
+
+.badge {
+  display: inline-block;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-full);
+  background: var(--color-bg);
+  font-size: var(--font-size-sm);
+}
+
+.badge--accent {
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
+}

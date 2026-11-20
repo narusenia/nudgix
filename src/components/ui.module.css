@@ -1,0 +1,2335 @@
+/* ---------------------------------------------------------------- 骨格 */
+.app {
+  height: 100%;
+  padding-right: var(--drawer, 0px);
+  transition: padding-right 160ms var(--ease);
+  display: flex;
+  flex-direction: column;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--line);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-weight: 600;
+  margin-right: 6px;
+}
+
+.logo {
+  width: 16px;
+  height: 16px;
+  border-radius: 5px;
+  background: var(--accent);
+  box-shadow: var(--accent-shadow);
+}
+
+.route {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  padding: 3px 9px;
+  border-radius: 7px;
+  background: var(--well);
+  box-shadow: var(--inset);
+  color: var(--sub);
+  font: 11px var(--mono);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dot {
+  flex: none;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #3fb950;
+}
+
+.spacer {
+  flex: 1;
+}
+
+.body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  gap: 8px;
+  padding: 8px;
+}
+
+.left,
+.right {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 0;
+}
+
+.left {
+  width: 270px;
+}
+
+.right {
+  width: 320px;
+}
+
+.center {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.panel {
+  padding: 8px;
+  border-radius: 10px;
+  background: var(--panel);
+  box-shadow: var(--shadow);
+}
+
+.scrollPanel {
+  composes: panel;
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+
+.panelHead {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+  min-height: 24px;
+}
+
+.panelTitle {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--sub);
+}
+
+.count {
+  min-width: 18px;
+  padding: 0 5px;
+  border-radius: 9px;
+  background: var(--well);
+  box-shadow: var(--inset);
+  font-size: 10px;
+  text-align: center;
+  color: var(--sub);
+}
+
+.empty {
+  margin: 4px 2px;
+  color: var(--sub);
+  font-size: 11px;
+}
+
+/* ---------------------------------------------------------------- ボタン */
+.iconButton {
+  flex: none;
+  width: 28px;
+  height: 26px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 7px;
+  transition: background 120ms var(--ease), box-shadow 120ms var(--ease), transform 80ms var(--ease);
+}
+
+.iconButton:active {
+  transform: scale(0.94);
+}
+
+.ghost {
+  background: transparent;
+  color: var(--sub);
+}
+
+.ghost:hover,
+.ghost[aria-pressed='true'] {
+  background: var(--raised);
+  box-shadow: var(--shadow);
+  color: var(--text);
+}
+
+.raised {
+  background: var(--raised);
+  box-shadow: var(--shadow);
+  color: var(--sub);
+}
+
+.raised:hover {
+  color: var(--text);
+}
+
+.primary,
+.ghost.primary {
+  background: var(--accent);
+  box-shadow: var(--accent-shadow);
+  color: #fff;
+}
+
+.textButton {
+  border: 0;
+  padding: 5px 12px;
+  border-radius: 7px;
+  background: var(--accent);
+  box-shadow: var(--accent-shadow);
+  color: #fff;
+}
+
+.seg {
+  display: flex;
+  padding: 2px;
+  border-radius: 8px;
+  background: var(--well);
+  box-shadow: var(--inset);
+}
+
+.segItem {
+  border: 0;
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--sub);
+  font-size: 11px;
+  transition: background 120ms var(--ease);
+}
+
+.segItem[data-pressed] {
+  background: var(--raised);
+  box-shadow: var(--shadow);
+  color: var(--text);
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.toolGroup {
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 10px;
+  background: var(--panel);
+  box-shadow: var(--shadow);
+}
+
+/* ---------------------------------------------------------------- ツールチップ */
+.tip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: var(--tip-bg);
+  color: #e6e7ea;
+  font: 500 11px/1.4 var(--sans);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08), 0 8px 20px rgba(0, 0, 0, 0.45);
+  transform-origin: var(--transform-origin);
+  transition: opacity 100ms var(--ease), transform 100ms var(--ease);
+}
+
+.tip[data-starting-style],
+.tip[data-ending-style] {
+  opacity: 0;
+  transform: scale(0.96);
+}
+
+.tipKey {
+  font: 10px var(--sans);
+  color: #9a9ca5;
+}
+
+/* ---------------------------------------------------------------- 画面（iframe） */
+.stage {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  border-radius: 12px;
+  background: var(--stage);
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.45), inset 0 -1px 0 rgba(255, 255, 255, 0.05);
+  display: flex;
+  justify-content: center;
+}
+
+.frameWrap {
+  position: relative;
+  flex: none;
+  height: 100%;
+  background: #fff;
+  box-shadow: 0 10px 32px rgba(0, 0, 0, 0.35);
+  transition: width 200ms var(--ease);
+}
+
+.frame {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.box {
+  position: absolute;
+  /* 画面の中身が透けて見えるよう半透明にする */
+  border: 1.5px solid rgba(94, 106, 210, 0.5);
+  border-radius: 2px;
+}
+
+.hoverBox {
+  composes: box;
+  border-style: dashed;
+  background: rgba(94, 106, 210, 0.05);
+}
+
+.boxLabel {
+  position: absolute;
+  left: -1.5px;
+  bottom: 100%;
+  padding: 1px 6px;
+  border-radius: 4px 4px 0 0;
+  background: var(--accent);
+  color: #fff;
+  font: 10px/1.5 var(--mono);
+  white-space: nowrap;
+}
+
+/* ---------------------------------------------------------------- 左：パンくずと変更 */
+.crumbs {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  font: 11px var(--mono);
+}
+
+.crumb {
+  text-align: left;
+  border: 0;
+  padding: 3px 6px;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--sub);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.crumb:hover {
+  color: var(--text);
+}
+
+.crumb[aria-current='true'] {
+  background: var(--well);
+  box-shadow: var(--inset);
+  color: var(--text);
+}
+
+.crumbTag {
+  color: var(--sub);
+  margin-left: 6px;
+}
+
+.changeList {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.changeCard {
+  border-radius: 9px;
+  background: var(--raised);
+  box-shadow: var(--shadow);
+  transition: box-shadow 120ms var(--ease);
+}
+
+.changeCardActive {
+  composes: changeCard;
+  box-shadow: 0 0 0 1.5px var(--accent), var(--shadow);
+}
+
+.changeCardGone {
+  composes: changeCard;
+  opacity: 0.7;
+}
+
+.changeHead {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 6px 4px 8px;
+}
+
+.changeTitleButton {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  text-align: left;
+}
+
+.changeTitle {
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.changeWhere {
+  font: 10px var(--mono);
+  color: var(--sub);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.badge {
+  flex: none;
+  padding: 1px 7px;
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--warn) 14%, transparent);
+  color: var(--warn);
+  font-size: 10px;
+}
+
+.changeRows {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 0 6px 6px;
+}
+
+.changeRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 12px minmax(0, 1fr);
+  align-items: center;
+  gap: 2px 5px;
+  padding: 4px 6px 5px;
+  border-radius: 6px;
+  background: var(--well);
+  box-shadow: var(--inset);
+}
+
+.rowLabel {
+  grid-column: 1 / -1;
+  font-size: 10px;
+  color: var(--sub);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.valueCell {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+  font: 10px var(--mono);
+}
+
+.from {
+  composes: valueCell;
+  color: var(--sub);
+}
+
+.to {
+  composes: valueCell;
+  color: var(--accent-text);
+  font-weight: 500;
+}
+
+.ellipsis {
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.arrow {
+  color: var(--sub);
+  display: grid;
+}
+
+.arrow svg {
+  width: 12px;
+  height: 12px;
+}
+
+.delta {
+  margin-left: auto;
+  flex: none;
+  font-size: 10px;
+  color: var(--delta);
+}
+
+/* ---------------------------------------------------------------- 値の小さい見本 */
+.icoColor {
+  flex: none;
+  width: 11px;
+  height: 11px;
+  border-radius: 3px;
+  box-shadow: inset 0 0 0 1px rgba(128, 128, 128, 0.35);
+}
+
+.icoShadow {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 13px;
+  overflow: hidden;
+  border-radius: 3px;
+  background: #e8eaee;
+}
+
+.icoShadow > span {
+  width: 20px;
+  height: 12px;
+  border-radius: 3px;
+  background: #fff;
+  transform: scale(0.5);
+}
+
+.icoRadius {
+  flex: none;
+  width: 11px;
+  height: 11px;
+  border: 1.5px solid currentColor;
+  border-right: 0;
+  border-bottom: 0;
+}
+
+.icoSpace {
+  flex: none;
+  height: 7px;
+  border-radius: 2px;
+  background: rgba(94, 186, 125, 0.75);
+}
+
+.icoText {
+  flex: none;
+  font: 600 10px/1 var(--sans);
+}
+
+/* ---------------------------------------------------------------- 右：プロパティとトークン */
+.target {
+  padding: 2px 6px 8px;
+}
+
+.targetName {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 600;
+}
+
+.targetText {
+  color: var(--sub);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* プロパティパネルの節。Figma のように、パネルの端から端まで線を引いて区切る */
+.pSection {
+  margin: 0 -8px;
+  padding: 8px 8px 10px;
+  border-top: 1px solid var(--line);
+}
+
+.pSectionTitle {
+  margin: 0 6px 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+/* 幅・高さは Figma の W・H のように2つ横に並べる */
+.sizeGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2px;
+}
+
+.propRowCompact {
+  gap: 6px;
+}
+
+.propLabelCompact {
+  flex: none;
+  color: var(--sub);
+}
+
+.groupTitle {
+  margin: 8px 2px 2px;
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--sub);
+}
+
+.propRow {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 24px;
+  padding: 3px 6px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  text-align: left;
+}
+
+.propRow:hover {
+  background: var(--raised);
+}
+
+.propRow[aria-expanded='true'] {
+  background: var(--well);
+  box-shadow: var(--inset);
+}
+
+.layoutRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 26px;
+  padding: 1px 6px;
+}
+
+.segIcon {
+  composes: segItem;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 20px;
+  padding: 0;
+}
+
+/* 揃えのパッド：3×3。選ばれたマスだけ子の並びの絵を出し、ほかは点にする */
+.pad {
+  display: grid;
+  grid-template-columns: repeat(3, 22px);
+  grid-template-rows: repeat(3, 22px);
+  padding: 3px;
+  border-radius: 8px;
+  background: var(--well);
+  box-shadow: var(--inset);
+}
+
+.padCell,
+.padCellOn {
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  cursor: pointer;
+}
+
+.padCell::before {
+  content: '';
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: var(--sub);
+  opacity: 0.6;
+}
+
+.padBars {
+  display: none;
+  gap: 2px;
+  width: 14px;
+  height: 14px;
+}
+
+.padBars i {
+  flex: none;
+  width: 3px;
+  height: 3px;
+  border-radius: 1px;
+  background: currentColor;
+}
+
+.padCell:hover::before {
+  display: none;
+}
+
+.padCell:hover .padBars {
+  display: flex;
+  color: var(--sub);
+}
+
+.padCellOn .padBars {
+  display: flex;
+  color: var(--accent);
+}
+
+.padSide {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.argInput {
+  flex: 1;
+  min-width: 0;
+  height: 22px;
+  padding: 0 6px;
+  border: 0;
+  border-radius: 6px;
+  font: inherit;
+  color: var(--text);
+  background: var(--well);
+  box-shadow: var(--inset);
+}
+
+.layoutPos {
+  flex: 1;
+  color: var(--sub);
+  font-variant-numeric: tabular-nums;
+}
+
+.propLabel {
+  flex: none;
+  width: 72px;
+  color: var(--sub);
+}
+
+.propValue {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 5px;
+  font: 11px var(--mono);
+  color: var(--sub);
+}
+
+.propValueChanged {
+  composes: propValue;
+  color: var(--accent-text);
+}
+
+.tokenList {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  margin: 3px 0 6px;
+  padding: 3px;
+  border-radius: 8px;
+  background: var(--well);
+  box-shadow: var(--inset);
+  max-height: 320px;
+  overflow: auto;
+}
+
+.tokenGroupTitle {
+  margin: 4px 6px 2px;
+  font-size: 10px;
+  color: var(--sub);
+}
+
+.token {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 24px;
+  padding: 3px 6px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  text-align: left;
+  transition: background 80ms var(--ease);
+}
+
+.token:hover,
+.token:focus-visible {
+  outline: none;
+  background: var(--row-active);
+  box-shadow: var(--shadow);
+}
+
+.tokenName {
+  flex: 1;
+  min-width: 0;
+  font: 11px var(--mono);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tokenValue {
+  flex: none;
+  font: 10px var(--mono);
+  color: var(--sub);
+}
+
+.tokenCheck {
+  flex: none;
+  width: 14px;
+  display: grid;
+  color: var(--accent-text);
+}
+
+.tokenCheck svg {
+  width: 12px;
+  height: 12px;
+}
+
+.promptPre {
+  margin: 0;
+  padding: 8px;
+  max-height: 220px;
+  overflow: auto;
+  border-radius: 7px;
+  background: var(--well);
+  box-shadow: var(--inset);
+  font: 10.5px/1.6 var(--mono);
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+/* ---------------------------------------------------------------- 起動待ち */
+.waiting {
+  height: 100%;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+}
+
+.waitingCard {
+  width: min(460px, 100%);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 20px;
+  border-radius: 14px;
+  background: var(--panel);
+  box-shadow: var(--shadow);
+}
+
+.waitingTitle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.pulse {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--warn);
+  animation: pulse 1.6s var(--ease) infinite;
+}
+
+@keyframes pulse {
+  50% {
+    box-shadow: 0 0 0 5px color-mix(in srgb, var(--warn) 15%, transparent);
+  }
+}
+
+.waitingBody {
+  margin: 0;
+  color: var(--sub);
+}
+
+.commandBox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 6px 6px 10px;
+  border-radius: 9px;
+  background: var(--well);
+  box-shadow: var(--inset);
+  font: 11px var(--mono);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.fieldLabel {
+  font-size: 11px;
+  color: var(--sub);
+}
+
+.input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  padding: 6px 9px;
+  border-radius: 7px;
+  background: var(--well);
+  box-shadow: var(--inset);
+  font: 11px var(--mono);
+}
+
+.warnText {
+  margin: 0;
+  font-size: 11px;
+  color: var(--warn);
+}
+
+/* ---------------------------------------------------------------- 全画面モード */
+.floatRoot {
+  position: fixed;
+  inset: 0;
+  background: var(--stage);
+}
+
+.floatBody {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.stageFloating {
+  composes: stage;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.floatBar {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 6px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--panel) 88%, transparent);
+  backdrop-filter: blur(14px);
+  box-shadow: var(--shadow), 0 12px 32px rgba(0, 0, 0, 0.35);
+}
+
+.floatBar .logo {
+  margin: 0 4px;
+}
+
+.floatSep {
+  width: 1px;
+  height: 18px;
+  margin: 0 2px;
+  background: var(--line);
+}
+
+.floatCol {
+  position: absolute;
+  top: 56px;
+  bottom: 12px;
+  z-index: 9;
+  width: 320px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  pointer-events: none;
+  animation: floatIn 180ms var(--ease);
+}
+
+/* 列の空いた所は画面を触れるようにし、パネルだけ受け取る */
+.floatCol > * {
+  /* 半透明のパネルは重なり順が後ろに回り、上のパネルの影が下のパネルに落ちる。
+     全部を positioned にして、下のパネルが上のパネルの影を覆う順に重ねる */
+  position: relative;
+  pointer-events: auto;
+  flex: 0 1 auto;
+  box-shadow: var(--shadow), 0 16px 40px rgba(0, 0, 0, 0.4);
+}
+
+.floatBottom {
+  justify-content: flex-end;
+}
+
+/* 変更一覧とプロンプトは、触っていないときは画面が透けて見えるよう半透明にする */
+.floatBottom > * {
+  opacity: 0.45;
+  transition: opacity 150ms var(--ease);
+}
+
+.floatBottom > *:hover,
+.floatBottom > *:focus-within {
+  opacity: 1;
+}
+
+/* 全画面では、右のパネルも触っていないときは下の画面が透けて見えるようにする */
+.floatCol:not(.floatBottom) > * {
+  opacity: 0.55;
+  transition: opacity 150ms var(--ease);
+}
+
+.floatCol:not(.floatBottom) > *:hover,
+.floatCol:not(.floatBottom) > *:focus-within {
+  opacity: 1;
+}
+
+/* 半透明を切ったときは、触っていなくても不透明にする */
+.opaque .floatCol > *,
+.opaque .floatBar {
+  opacity: 1;
+}
+
+.floatRight {
+  /* ストーリーのドロワーが開いている間は、その幅だけ左へ寄せる（zoom の中なので幅を割り戻す） */
+  right: calc(12px + var(--drawer, 0px) / var(--ui-zoom, 1));
+  transition: right 160ms var(--ease);
+  --float-from: 12px;
+}
+
+.floatLeft {
+  left: 12px;
+  --float-from: -12px;
+}
+
+@keyframes floatIn {
+  from {
+    opacity: 0;
+    transform: translateX(var(--float-from));
+  }
+}
+
+/* ---------------------------------------------------------------- 余白の帯と矩形選択 */
+.bandMargin,
+.bandPadding,
+.bandGap {
+  position: absolute;
+}
+
+.bandMargin {
+  background: rgba(246, 178, 107, 0.3);
+}
+
+.bandPadding {
+  background: rgba(147, 196, 125, 0.32);
+}
+
+.bandGap {
+  background: repeating-linear-gradient(45deg, rgba(180, 140, 230, 0.55) 0 3px, rgba(180, 140, 230, 0.2) 3px 6px);
+}
+
+.marquee {
+  position: absolute;
+  border: 1px solid var(--accent);
+  background: rgba(94, 106, 210, 0.12);
+}
+
+/* ---------------------------------------------------------------- 余白のボックスモデル図 */
+.boxModel {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 2px;
+  margin: 2px 0 6px;
+  padding: 6px;
+  border-radius: 8px;
+  background: rgba(246, 178, 107, 0.12);
+  box-shadow: inset 0 0 0 1px rgba(246, 178, 107, 0.35);
+}
+
+.bmPadding {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px;
+  border-radius: 6px;
+  background: rgba(147, 196, 125, 0.14);
+  box-shadow: inset 0 0 0 1px rgba(147, 196, 125, 0.4);
+}
+
+.bmTag {
+  position: absolute;
+  top: 3px;
+  left: 6px;
+  font-size: 9px;
+  color: var(--sub);
+}
+
+.bmEdge {
+  display: flex;
+  justify-content: center;
+}
+
+.bmMiddle {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.bmMiddle > .bmPadding {
+  flex: 1;
+}
+
+.bmContent {
+  position: relative;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 34px;
+  padding-top: 8px;
+  border-radius: 5px;
+  background: var(--well);
+  box-shadow: var(--inset);
+}
+
+.bmCell {
+  min-width: 34px;
+  max-width: 88px;
+  padding: 1px 5px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  font: 10px var(--mono);
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: background 100ms var(--ease);
+}
+
+.bmCell:hover,
+.bmCell[aria-expanded='true'],
+.bmCellChanged:hover,
+.bmCellChanged[aria-expanded='true'] {
+  background: var(--raised);
+  box-shadow: var(--shadow);
+}
+
+.bmCellChanged {
+  composes: bmCell;
+  color: var(--accent-text);
+  font-weight: 500;
+}
+
+/* ---------------------------------------------------------------- 大きい見本 */
+.tokenListWrap {
+  margin: 3px 0 6px;
+}
+
+.rawInput {
+  width: 100%;
+  margin-bottom: 4px;
+  padding: 5px 9px;
+  border: 0;
+  border-radius: 7px;
+  outline: none;
+  font: 11px var(--mono);
+  color: var(--text);
+  background: var(--well);
+  box-shadow: var(--inset);
+}
+
+.rawInput:focus {
+  box-shadow: var(--inset), 0 0 0 1.5px var(--accent);
+}
+
+.rawInput[data-invalid] {
+  box-shadow: var(--inset), 0 0 0 1.5px var(--warn);
+}
+
+.bigSpecimen {
+  position: relative;
+  height: 112px;
+  overflow: hidden;
+  margin-bottom: 4px;
+  border-radius: 8px;
+  background: var(--well);
+  box-shadow: var(--inset);
+}
+
+.bigMeta {
+  position: absolute;
+  left: 10px;
+  top: 8px;
+  z-index: 1;
+}
+
+.bigName {
+  font: 500 13px var(--mono);
+}
+
+.bigValue {
+  display: flex;
+  gap: 6px;
+  font: 11px var(--mono);
+  color: var(--sub);
+}
+
+/* 影の値は長いので、台に重ならないよう折り返す */
+.bigSpecimen[data-cat='shadows'] .bigMeta {
+  right: 56%;
+  overflow-wrap: anywhere;
+}
+
+/* 影：明るい台に「今」と「変更後」のカードを並べる */
+.bigShadowStage {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  bottom: 8px;
+  left: 46%;
+  display: flex;
+  align-items: center;
+  justify-content: space-evenly;
+  border-radius: 6px;
+  background: #f3f4f6;
+}
+
+.bigShadowCard {
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 52px;
+  border-radius: 6px;
+  background: #fff;
+  font: 500 10px var(--sans);
+  color: #6b7280;
+  transition: box-shadow 120ms var(--ease);
+}
+
+.bigShadowCard:first-child {
+  outline: 1px dashed #c4c8cf;
+  outline-offset: 3px;
+}
+
+.bigCorner,
+.bigCornerCurrent {
+  position: absolute;
+  left: 46%;
+  top: 34px;
+  width: 260px;
+  height: 200px;
+  border: 2px solid var(--text);
+  border-right: 0;
+  border-bottom: 0;
+  transition: border-radius 120ms var(--ease);
+}
+
+.bigCorner {
+  background: radial-gradient(120% 120% at 0% 0%, color-mix(in srgb, var(--text) 8%, transparent), transparent 60%);
+}
+
+.bigCornerCurrent {
+  border: 1.5px dashed var(--sub);
+  border-right: 0;
+  border-bottom: 0;
+  opacity: 0.6;
+}
+
+.bigBars {
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  bottom: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.bigBar,
+.bigBarCurrent {
+  height: 14px;
+  min-width: 2px;
+  border-radius: 3px;
+  transition: width 120ms var(--ease);
+}
+
+.bigBar {
+  background: rgba(147, 196, 125, 0.8);
+}
+
+.bigBarCurrent {
+  border: 1.5px dashed var(--sub);
+  opacity: 0.7;
+}
+
+.bigSwatches {
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  bottom: 10px;
+  height: 46px;
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  border-radius: 6px;
+  overflow: hidden;
+  box-shadow: inset 0 0 0 1px rgba(128, 128, 128, 0.3);
+}
+
+.bigSwatches span {
+  transition: background 120ms var(--ease);
+}
+
+.bigText {
+  position: absolute;
+  left: 10px;
+  bottom: 8px;
+  line-height: 1.1;
+  transition: font-size 120ms var(--ease);
+}
+
+/* ---------------------------------------------------------------- カーソルの下の変更前後 */
+.cursorTip {
+  position: fixed;
+  z-index: 50;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 6px;
+  max-width: 360px;
+  white-space: nowrap;
+  padding: 6px 9px;
+  border-radius: 8px;
+  background: var(--tip-bg);
+  color: #e6e7ea;
+  font: 11px var(--mono);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08), 0 10px 24px rgba(0, 0, 0, 0.45);
+  pointer-events: none;
+}
+
+.cursorTipLabel {
+  font-family: var(--sans);
+  color: #9a9ca5;
+}
+
+.cursorTipFrom {
+  color: #9a9ca5;
+}
+
+.cursorTipTo {
+  color: #aab0ff;
+  font-weight: 500;
+}
+
+.cursorTipValue {
+  color: #9a9ca5;
+}
+
+/* 影のような長い値は、ツールチップの幅で折り返す */
+.cursorTipFrom,
+.cursorTipValue {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.cursorTipDesc {
+  flex-basis: 100%;
+  font-family: var(--sans);
+  color: #c4c6cc;
+  white-space: normal;
+}
+
+.specSlot {
+  flex: none;
+  width: 28px;
+  display: flex;
+  align-items: center;
+}
+
+/* ---------------------------------------------------------------- ⌘K パレット */
+.paletteBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: transparent;
+}
+
+.palette {
+  position: fixed;
+  top: 72px;
+  left: 50%;
+  z-index: 41;
+  width: min(560px, calc(100vw - 32px));
+  max-height: min(460px, calc(100vh - 32px));
+  display: flex;
+  flex-direction: column;
+  transform-origin: top left;
+  border-radius: 12px;
+  background: var(--panel);
+  box-shadow: var(--shadow), 0 24px 60px rgba(0, 0, 0, 0.5);
+  transition: opacity 120ms var(--ease), transform 120ms var(--ease);
+}
+
+.palette[data-starting-style],
+.palette[data-ending-style] {
+  opacity: 0;
+  transform: scale(0.98);
+}
+
+.paletteHead {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--line);
+  color: var(--sub);
+}
+
+.paletteInput {
+  flex: 1;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--text);
+  font-size: 13px;
+}
+
+.paletteList {
+  overflow: auto;
+  padding: 4px;
+}
+
+.paletteItem {
+  composes: token;
+}
+
+.paletteItem[data-active] {
+  background: var(--row-active);
+  box-shadow: var(--shadow);
+}
+
+/* ---------------------------------------------------------------- 画面上のハンドル */
+.handles {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+/* 余白と gap の帯をつかむ所。帯の色は下の画面側で描いているので、普段は透明で、乗せたときだけ濃くする */
+.zone {
+  position: absolute;
+  pointer-events: auto;
+  border-radius: 1px;
+}
+
+.zonePad {
+  --zone: rgba(147, 196, 125, 0.55);
+}
+
+.zoneMargin {
+  --zone: rgba(246, 178, 107, 0.55);
+}
+
+.zoneGap {
+  --zone: rgba(180, 140, 230, 0.55);
+}
+
+.zoneOn {
+  background: var(--zone);
+}
+
+/* 値が 0 で帯が見えない辺は、要素に乗せている間だけ破線でつかめる場所を出す */
+.zoneZero {
+  outline: 1px dashed var(--zone);
+  outline-offset: -1px;
+}
+
+.handle {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  color: var(--accent);
+  padding: 0;
+  border: 0;
+  background: #fff;
+  box-shadow: 0 0 0 1.5px var(--accent), 0 2px 6px rgba(0, 0, 0, 0.35);
+  pointer-events: auto;
+  /* --inv は寄せている拡大率の逆数。寄せてもハンドルの見た目の大きさは変えない */
+  transform: translate(-50%, -50%) scale(var(--inv, 1));
+  /* 触っていないときは画面の邪魔にならないよう半透明にする。アイコンが読める濃さは残す */
+  opacity: 0.6;
+  transition: transform 120ms var(--ease), box-shadow 120ms var(--ease), opacity 120ms var(--ease);
+}
+
+.handle:hover,
+.handle:focus-visible {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(calc(1.2 * var(--inv, 1)));
+}
+
+.handle_dot {
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  cursor: nwse-resize;
+}
+
+.handle_sq {
+  width: 9px;
+  height: 9px;
+  border-radius: 2px;
+}
+
+.handle_chip {
+  padding: 1px 5px;
+  border-radius: 5px;
+  color: var(--accent);
+  font: 600 10px/1.4 var(--sans);
+  cursor: ns-resize;
+}
+
+/* 吸い付いた瞬間に小さく弾む（key を変えて付け直すたびに再生される） */
+.moveGrip {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  color: #fff;
+  background: var(--accent);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+  pointer-events: auto;
+  cursor: grab;
+  transform: translate(0, -50%) scale(var(--inv, 1));
+  transform-origin: left center;
+  opacity: 0.45;
+  transition: opacity 120ms var(--ease);
+}
+
+.moveGrip:hover {
+  opacity: 1;
+}
+
+.removeButton {
+  composes: moveGrip;
+  cursor: pointer;
+  background: #d9534f;
+}
+
+.moveGhost {
+  position: absolute;
+  border: 1.5px dashed var(--accent);
+  border-radius: 4px;
+  background: rgba(94, 106, 210, 0.12);
+  pointer-events: none;
+}
+
+.moveGhostFree {
+  composes: moveGhost;
+  border-style: solid;
+  background: rgba(94, 106, 210, 0.2);
+}
+
+/* 別の区画へ移すときの、移し先の枠 */
+.moveTarget {
+  position: absolute;
+  border: 1.5px solid var(--accent);
+  border-radius: 4px;
+  background: rgba(94, 106, 210, 0.06);
+  pointer-events: none;
+}
+
+.moveLine {
+  position: absolute;
+  border-radius: 1px;
+  background: var(--accent);
+  box-shadow: 0 0 0 2px rgba(94, 106, 210, 0.3);
+  pointer-events: none;
+}
+
+/* 幅と高さは Figma のリサイズのつまみと同じ、枠の線の上の白い四角。薄くせず常に見せる */
+.handleSize {
+  opacity: 1;
+  background: #fff;
+  box-shadow: 0 0 0 1.5px var(--accent), 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+/* 枠の下に出す 幅 × 高さ */
+.sizeBadge {
+  position: absolute;
+  transform-origin: 0 0;
+  scale: var(--inv, 1);
+  padding: 1px 5px;
+  border-radius: 4px;
+  font: 500 10px/1.5 var(--mono);
+  color: #fff;
+  background: var(--accent);
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.handleLinked {
+  opacity: 1;
+  box-shadow: 0 0 0 2px var(--accent), 0 0 0 5px rgba(94, 106, 210, 0.25);
+}
+
+.handleHint {
+  /* ハンドルと同じ座標（iframe の中の位置）で置く。fixed だと拡大・ずらした画面でずれる */
+  position: absolute;
+  transform-origin: 0 0;
+  scale: var(--inv, 1);
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  padding: 4px 7px;
+  border-radius: 7px;
+  font-size: 11px;
+  color: var(--text);
+  background: color-mix(in srgb, var(--panel) 92%, transparent);
+  backdrop-filter: blur(10px);
+  box-shadow: var(--shadow), 0 6px 18px rgba(0, 0, 0, 0.3);
+  pointer-events: none;
+  zoom: var(--ui-zoom, 1);
+}
+
+.hintSwatchPad,
+.hintSwatchMargin {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+}
+
+.hintSwatchPad {
+  background: rgb(147, 196, 125);
+}
+
+.hintSwatchMargin {
+  box-shadow: inset 0 0 0 2px rgb(230, 150, 70);
+}
+
+.hintKey,
+.hintKeyOn {
+  font: inherit;
+  font-size: 10px;
+  padding: 1px 5px;
+  border-radius: 4px;
+  color: var(--sub);
+  background: var(--well);
+}
+
+.hintKeyOn {
+  color: #fff;
+  background: var(--accent);
+}
+
+.handleActive {
+  opacity: 1;
+  animation: snap 160ms var(--ease);
+  box-shadow: 0 0 0 2px var(--accent), 0 0 0 5px rgba(94, 106, 210, 0.25);
+}
+
+@keyframes snap {
+  40% {
+    transform: translate(-50%, -50%) scale(calc(1.35 * var(--inv, 1)));
+  }
+}
+
+.tick,
+.tickActive {
+  position: absolute;
+  width: 8px;
+  height: 1.5px;
+  background: rgba(94, 106, 210, 0.55);
+  pointer-events: none;
+}
+
+.tickActive {
+  width: 12px;
+  height: 2px;
+  background: var(--accent);
+}
+
+.dragTip {
+  composes: cursorTip;
+}
+
+.dragShield {
+  position: fixed;
+  inset: -100vmax;
+  z-index: 30;
+  pointer-events: auto;
+}
+
+/* UI の大きさ（密度）。iframe を含む .stage には掛けない */
+.header,
+.left,
+.right,
+.toolbar,
+.floatBar,
+.floatCol,
+.palette,
+.tip,
+.waitingCard {
+  zoom: var(--ui-zoom, 1);
+}
+
+/* ---------------------------------------------------------------- ドラッグ中の比較 */
+.ghostShape,
+.ghostLine {
+  position: absolute;
+  pointer-events: none;
+  border: 1.5px dashed rgba(255, 255, 255, 0.95);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35);
+}
+
+.ghostLine {
+  border-width: 0;
+  border-top-width: 1.5px;
+  border-left-width: 1.5px;
+}
+
+.miniCompare {
+  position: relative;
+  flex-basis: 100%;
+  height: 44px;
+  margin-top: 4px;
+  overflow: hidden;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.miniCorner,
+.miniCornerFrom {
+  position: absolute;
+  left: 16px;
+  top: 10px;
+  width: 140px;
+  height: 80px;
+  border: 2px solid #e6e7ea;
+  border-right: 0;
+  border-bottom: 0;
+}
+
+.miniCornerFrom {
+  border: 1.5px dashed #9a9ca5;
+  border-right: 0;
+  border-bottom: 0;
+}
+
+.miniBars {
+  flex-basis: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.miniText {
+  flex-basis: 100%;
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-top: 2px;
+  font-family: var(--sans);
+  line-height: 1.1;
+}
+
+.floatPill {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  align-self: flex-start;
+  padding: 3px;
+  border-radius: 10px;
+  background: var(--panel);
+}
+
+/* 右側に置いたときは、開くトグルも右端にそろえる */
+.floatRight .floatPill {
+  align-self: flex-end;
+}
+
+.pillToggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 26px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  font-weight: 600;
+}
+
+.pillToggle:hover {
+  background: var(--raised);
+}
+
+/* ツールバーも、触っていないときは下の画面が見えるよう半透明にする */
+.floatBar {
+  opacity: 0.5;
+  transition: opacity 150ms var(--ease);
+}
+
+.floatBar:hover,
+.floatBar:focus-within {
+  opacity: 1;
+}
+
+.barGrip {
+  cursor: grab;
+  touch-action: none;
+}
+
+.barGrip:active {
+  cursor: grabbing;
+}
+
+/* ---------------------------------------------------------------- ストーリーのギャラリー（右端の Drawer） */
+.galleryTab,
+.galleryTabOpen {
+  position: fixed;
+  top: 50%;
+  right: 0;
+  z-index: 31;
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 52px;
+  padding: 0;
+  border: 0;
+  border-radius: 8px 0 0 8px;
+  color: var(--sub);
+  background: var(--raised);
+  box-shadow: var(--shadow);
+  transform: translateY(-50%);
+  cursor: pointer;
+  zoom: var(--ui-zoom, 1);
+}
+
+.galleryTabOpen {
+  right: 352px;
+  color: var(--text);
+}
+
+.galleryTab:hover,
+.galleryTabOpen:hover {
+  color: var(--text);
+}
+
+.gallery {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 30;
+  width: 352px;
+  display: flex;
+  flex-direction: column;
+  background: color-mix(in srgb, var(--panel) 96%, transparent);
+  backdrop-filter: blur(14px);
+  box-shadow: var(--shadow), -16px 0 40px rgba(0, 0, 0, 0.35);
+  animation: galleryIn 160ms var(--ease);
+  zoom: var(--ui-zoom, 1);
+}
+
+@keyframes galleryIn {
+  from {
+    transform: translateX(24px);
+    opacity: 0;
+  }
+}
+
+.galleryHead {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--line);
+  color: var(--sub);
+}
+
+.galleryList {
+  flex: 1;
+  overflow: auto;
+  padding: 4px 12px 16px;
+}
+
+.galleryGroup {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  margin: 0;
+  padding: 8px 0 6px;
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--sub);
+  background: var(--panel);
+}
+
+.galleryGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
+.storyCard,
+.storyCardLoading {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  cursor: grab;
+}
+
+.storyCardLoading {
+  cursor: progress;
+  opacity: 0.6;
+}
+
+.storyThumb {
+  position: relative;
+  height: 95px;
+  overflow: hidden;
+  border-radius: 6px;
+  background: #fff;
+  box-shadow: var(--inset);
+  pointer-events: none;
+}
+
+.storyThumb iframe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  border: 0;
+  transform-origin: top left;
+  pointer-events: none;
+}
+
+.storyCard:hover .storyThumb {
+  box-shadow: 0 0 0 1.5px var(--accent);
+}
+
+.storyName {
+  overflow: hidden;
+  font-size: 11px;
+  color: var(--sub);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.galleryEmpty {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: 16px 12px;
+  color: var(--sub);
+}
+
+.galleryEmpty p {
+  width: 100%;
+  margin: 0;
+}
+
+.galleryCmd {
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: var(--mono);
+  background: var(--well);
+}
+
+.storyGhost {
+  position: fixed;
+  z-index: 10000;
+  border: 1.5px dashed var(--accent);
+  border-radius: 4px;
+  background: rgba(94, 106, 210, 0.12);
+  pointer-events: none;
+}
+
+/* ---------------------------------------------------------------- コードピーク */
+.panelTabs {
+  margin-top: 8px;
+  align-self: flex-start;
+  width: fit-content;
+}
+
+.codeTab {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-top: 8px;
+}
+
+.codeSection {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.codeTitle {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--sub);
+}
+
+.codeNote {
+  margin: 0;
+  font-size: 11px;
+  color: var(--sub);
+}
+
+.codeBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.codeHead {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.codeLoc,
+.codeLocSmall {
+  font: 10px var(--mono);
+  color: var(--sub);
+}
+
+.codeLoc {
+  flex: 1;
+}
+
+.codeLines {
+  position: relative;
+  margin: 0;
+  max-height: 240px;
+  overflow: auto;
+  padding: 4px 0;
+  border-radius: 6px;
+  background: var(--well);
+  box-shadow: var(--inset);
+  font: 10.5px/1.6 var(--mono);
+}
+
+.codeLine,
+.codeLineOn,
+.codeLineNote {
+  display: flex;
+  gap: 8px;
+  padding: 0 8px 0 0;
+  white-space: pre;
+  width: max-content;
+  min-width: 100%;
+}
+
+.codeLineOn {
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+}
+
+.codeLineNote {
+  background: color-mix(in srgb, var(--warn) 12%, transparent);
+}
+
+.codeNum {
+  position: sticky;
+  left: 0;
+  flex: none;
+  width: 34px;
+  padding-right: 6px;
+  text-align: right;
+  color: var(--sub);
+  background: var(--well);
+  opacity: 0.8;
+}
+
+.codeText {
+  color: var(--text);
+}
+
+.codeAnno {
+  padding: 0 6px;
+  border-radius: 4px;
+  background: var(--warn);
+  color: #fff;
+  font-size: 10px;
+}
+
+.codeToggle {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  min-width: 0;
+  padding: 3px 4px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 11px;
+  text-align: left;
+}
+
+.codeToggle:hover:not(:disabled) {
+  background: var(--well);
+}
+
+.codeHits {
+  margin: 0;
+  padding: 0 0 0 16px;
+  list-style: none;
+  max-height: 200px;
+  overflow: auto;
+}
+
+.codeHit {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font: 10px var(--mono);
+  color: var(--sub);
+}
+
+.codeHit > :first-child {
+  flex: 1;
+}
+
+.codeChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.codeChip {
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: var(--well);
+  font: 10px var(--mono);
+}
+
+.codeJsx {
+  margin: 0;
+  padding: 6px 8px;
+  border-radius: 6px;
+  background: var(--well);
+  box-shadow: var(--inset);
+  font: 10.5px/1.6 var(--mono);
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.codeTag {
+  color: var(--accent-text);
+}
+
+.codeAttr {
+  color: var(--warn);
+}
+
+.codeTokenClass {
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--accent) 22%, transparent);
+}
+
+.drawer,
+.drawerFloating {
+  position: relative;
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  border-radius: 10px;
+  background: var(--panel);
+  box-shadow: var(--shadow);
+}
+
+.drawerFloating {
+  position: absolute;
+  left: 50%;
+  bottom: 12px;
+  z-index: 8;
+  width: min(760px, calc(100% - 24px));
+  transform: translateX(-50%);
+}
+
+.drawerGrip {
+  position: absolute;
+  top: -4px;
+  left: 0;
+  right: 0;
+  height: 8px;
+  cursor: ns-resize;
+}
+
+.drawerHead {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--line);
+}
+
+.drawerCheck {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--sub);
+}
+
+.drawerBody {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 6px 8px;
+}
+
+.drawerBody .codeLines {
+  max-height: 220px;
+}
+
+.htmlTree {
+  font: 10.5px/1.7 var(--mono);
+}
+
+.htmlRow,
+.htmlRowOn {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  min-width: 0;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.htmlRow:hover {
+  background: var(--well);
+}
+
+.htmlRowOn {
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+}
+
+.htmlTwisty {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 14px;
+  height: 14px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--sub);
+}
+
+.htmlChanged {
+  flex: none;
+  width: 6px;
+  height: 6px;
+  margin-right: 3px;
+  border-radius: 50%;
+  background: var(--warn);
+}
+
+.htmlText {
+  color: var(--text);
+}
+
+.reactRow {
+  font: 10.5px/1.6 var(--mono);
+}
+
+.reactRow .codeToggle {
+  font: inherit;
+}
+
+.reactProps {
+  color: var(--sub);
+}
+
+.reactBody {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 4px 0 8px 16px;
+}
+
+.reactPropList {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 1px 10px;
+  margin: 0;
+}
+
+.reactPropList > div {
+  display: contents;
+}
+
+.reactPropList dt {
+  color: var(--warn);
+}
+
+.reactPropList dd {
+  margin: 0;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.inlinePeek {
+  position: absolute;
+  z-index: 5;
+  width: 420px;
+  padding: 6px;
+  border-radius: 8px;
+  background: var(--panel);
+  box-shadow: var(--shadow);
+  transform-origin: top left;
+  pointer-events: auto;
+}
+
+.inlinePeek .codeLines {
+  max-height: 140px;
+}
+
+/* shiki の色。ダークが既定で、ライトのときは --shiki-light を使う */
+.codeText > span {
+  color: var(--shiki-dark);
+}
+
+:global(:root[data-theme='light']) .codeText > span {
+  color: var(--shiki-light);
+}

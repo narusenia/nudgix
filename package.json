@@ -1,0 +1,31 @@
+{
+  "name": "nudgix",
+  "version": "0.1.0",
+  "description": "Nudge your local UI in the browser and turn the tweaks into a prompt for Claude Code",
+  "license": "MIT",
+  "type": "module",
+  "repository": { "type": "git", "url": "git+https://github.com/narusenia/nudgix.git" },
+  "bin": { "nudgix": "bin/nudgix.mjs" },
+  "files": ["bin", "server.mjs", "server", "dist", "skills"],
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "dev": "NUDGIX_DEV=1 node bin/nudgix.mjs start",
+    "build": "vite build",
+    "typecheck": "tsc",
+    "prepublishOnly": "pnpm typecheck && pnpm build"
+  },
+  "devDependencies": {
+    "@base-ui/react": "^1.9.0",
+    "@types/node": "^26.6.6",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.3.0",
+    "lucide-react": "^1.75.0",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "shiki": "^4.6.0",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.8"
+  },
+  "packageManager": "pnpm@12.18.0"
+}

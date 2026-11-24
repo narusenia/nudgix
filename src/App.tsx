@@ -1,7 +1,7 @@
 import { Toggle } from '@base-ui/react/toggle';
 import { ToggleGroup } from '@base-ui/react/toggle-group';
 import { Tooltip } from '@base-ui/react/tooltip';
-import { ALargeSmall, Blend, ChevronDown, ChevronUp, CodeXml, Columns3, Copy, Command as CommandIcon, Maximize2, Moon, MousePointer2, Redo2, ScanSearch, SquareSplitHorizontal, Sun, Undo2 } from 'lucide-react';
+import { ALargeSmall, ArrowLeft, ArrowRight, Blend, ChevronDown, ChevronUp, CodeXml, Columns3, Copy, Command as CommandIcon, Maximize2, Moon, MousePointer2, Redo2, RotateCw, ScanSearch, SquareSplitHorizontal, Sun, Undo2 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import { Canvas, type Width } from './components/Canvas';
 import { CodeDrawer, InlinePeek } from './components/CodeView';
@@ -1464,6 +1464,17 @@ export function App() {
               <div className={s.brand}>
                 <span className={s.logo} aria-hidden="true" />
                 nudgix
+              </div>
+              <div className={s.navButtons}>
+                <IconButton label={t.navBack} onClick={() => frameRef.current?.contentWindow?.history.back()}>
+                  <ArrowLeft size={14} />
+                </IconButton>
+                <IconButton label={t.navForward} onClick={() => frameRef.current?.contentWindow?.history.forward()}>
+                  <ArrowRight size={14} />
+                </IconButton>
+                <IconButton label={t.navReload} onClick={() => frameRef.current?.contentWindow?.location.reload()}>
+                  <RotateCw size={13} />
+                </IconButton>
               </div>
               <div className={s.route}>
                 <span className={s.dot} aria-hidden="true" style={status.targetUp ? undefined : { background: 'var(--warn)' }} />

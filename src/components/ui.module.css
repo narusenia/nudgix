@@ -592,9 +592,11 @@
   border: 0;
   border-radius: 7px;
   outline: none;
-  resize: vertical;
-  font: 12px/1.5 inherit;
-  font-family: inherit;
+  resize: none;
+  /* Grow with the text, scroll only when long */
+  field-sizing: content;
+  max-height: 9lh;
+  font: 12px/1.5 var(--sans);
   color: var(--text);
   background: var(--well);
   box-shadow: var(--inset);
@@ -1609,8 +1611,10 @@
   border: 0;
   outline: none;
   resize: none;
-  font: 13px/1.5 inherit;
-  font-family: inherit;
+  field-sizing: content;
+  min-height: 3lh;
+  max-height: 12lh;
+  font: 13px/1.5 var(--sans);
   color: var(--text);
   background: transparent;
 }

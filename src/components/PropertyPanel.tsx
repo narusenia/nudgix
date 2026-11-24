@@ -62,7 +62,7 @@ export function NoteField({
   return (
     <textarea
       className={s.noteInput}
-      rows={draft.includes('\n') ? 3 : 1}
+      rows={1}
       value={draft}
       placeholder={placeholder ?? t.notePlaceholder}
       title={t.noteHint}

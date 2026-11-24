@@ -8,7 +8,7 @@ import { CodeDrawer, InlinePeek } from './components/CodeView';
 import { Handles } from './components/Handles';
 import { CommandPalette, type Command } from './components/CommandPalette';
 import { Specimen } from './components/Specimen';
-import { CommentPins } from './components/CommentPins';
+import { CommentComposer, CommentPins } from './components/CommentPins';
 import { IconButton, Tip } from './components/IconButton';
 import { Breadcrumbs, ChangeList } from './components/LeftPane';
 import { PromptPanel } from './components/PromptPanel';
@@ -153,7 +153,8 @@ export function App() {
   const [picking, setPicking] = useState(false);
   // Comment tool: pick an element (or drag around several), then type straight into the comment field
   const [commenting, setCommenting] = useState(false);
-  const [noteFocus, setNoteFocus] = useState(0);
+  // Elements the comment box is open for (several when dragged around)
+  const [composer, setComposer] = useState<Element[] | null>(null);
   useEffect(() => {
     if (!picking) setCommenting(false);
   }, [picking]);
@@ -1422,12 +1423,12 @@ export function App() {
         // Holding Shift keeps adding in selection mode
         if (!additive) setPicking(false);
         select(el, additive);
-        if (commenting && !additive) setNoteFocus((n) => n + 1);
+        if (commenting && !additive) setComposer([el]);
       }}
       onPickMany={(els, additive) => {
         setPicking(false);
         selectMany(els, additive);
-        if (commenting) setNoteFocus((n) => n + 1);
+        if (commenting && els.length) setComposer(els);
       }}
       onKeyDown={onKeyDown}
       onKeyUp={onKeyUp}
@@ -1465,8 +1466,23 @@ export function App() {
         onSelect={(el) => {
           setPicking(false);
           select(el);
+          setComposer([el]);
         }}
       />
+      {composer ? (
+        <CommentComposer
+          key={composer.map((el) => locatorOf(el)).join(',')}
+          anchor={composer.length > 1 ? noteTarget(composer) : composer[0]}
+          initial={changes.current.get(composer.length > 1 ? noteTarget(composer) : composer[0])?.note ?? ''}
+          placeholder={composer.length > 1 ? t.noteMany(composer.length) : t.notePlaceholder}
+          onSubmit={(text) => {
+            if (composer.length > 1) setNote(noteTarget(composer), text, composer.map(scopeName));
+            else setNote(composer[0], text);
+            setComposer(null);
+          }}
+          onClose={() => setComposer(null)}
+        />
+      ) : null}
       {inlinePeek && selected?.el.isConnected && !picking ? <InlinePeek el={selected.el} change={changes.current.get(selected.el)} /> : null}
       {dropHint ? (
         <div className={s.handles}>
@@ -1509,7 +1525,6 @@ export function App() {
         onCommit={commit}
         states={statesOf(selected.el)}
         onState={toggleState}
-        noteFocus={noteFocus}
         note={(selection.length > 1 ? changes.current.get(noteTarget(selection.map((x) => x.el))) : changes.current.get(selected.el))?.note ?? ''}
         onNote={(note) =>
           selection.length > 1

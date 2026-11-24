@@ -33,8 +33,6 @@ type Props = {
   /** States forced on the element (hover, focus, active) */
   states: ElementState[];
   onState: (state: ElementState) => void;
-  /** Bumped by the comment tool to put the cursor in the comment field */
-  noteFocus: number;
   onNote: (note: string) => void;
 };
 
@@ -56,19 +54,13 @@ export function NoteField({
   el,
   value,
   placeholder,
-  focusKey = 0,
   onCommit,
-}: { el: Element; value: string; placeholder?: string; focusKey?: number; onCommit: (note: string) => void }) {
+}: { el: Element; value: string; placeholder?: string; onCommit: (note: string) => void }) {
   const t = useT();
   const [draft, setDraft] = useState(value);
-  const ref = useRef<HTMLTextAreaElement>(null);
-  useEffect(() => {
-    if (focusKey) ref.current?.focus();
-  }, [focusKey]);
   useEffect(() => setDraft(value), [value, el]);
   return (
     <textarea
-      ref={ref}
       className={s.noteInput}
       rows={draft.includes('\n') ? 3 : 1}
       value={draft}
@@ -178,7 +170,7 @@ export function PropertyPanel(props: Props) {
             </button>
           ))}
         </div>
-        <NoteField el={selected.el} focusKey={props.noteFocus} value={props.note} placeholder={count > 1 ? t.noteMany(count) : undefined} onCommit={props.onNote} />
+        <NoteField el={selected.el} value={props.note} placeholder={count > 1 ? t.noteMany(count) : undefined} onCommit={props.onNote} />
         <div className={`${s.seg} ${s.panelTabs}`}>
           {(['props', 'code'] as const).map((k) => (
             <button key={k} type="button" className={s.segItem} data-pressed={tab === k ? '' : undefined} onClick={() => pickTab(k)}>

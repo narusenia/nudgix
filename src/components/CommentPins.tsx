@@ -87,3 +87,73 @@ export function CommentPins({ pins, onSelect }: { pins: Pin[]; onSelect: (el: El
     </div>
   );
 }
+
+/**
+ * Comment box opened next to the element by the comment tool (or by clicking a pin), like Figma's comment composer.
+ * Enter or clicking away saves, Shift+Enter adds a line, Escape closes without saving
+ */
+export function CommentComposer({
+  anchor,
+  initial,
+  placeholder,
+  onSubmit,
+  onClose,
+}: { anchor: Element; initial: string; placeholder: string; onSubmit: (text: string) => void; onClose: () => void }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [text, setText] = useState(initial);
+  // Set once saved or cancelled, so the blur that follows does nothing
+  const done = useRef(false);
+  useEffect(() => {
+    let raf = 0;
+    const tick = () => {
+      const box = ref.current;
+      if (box && anchor.isConnected) {
+        const r = anchor.getBoundingClientRect();
+        const frame = anchor.ownerDocument.defaultView?.frameElement as HTMLElement | null;
+        const k = frame ? frame.getBoundingClientRect().width / frame.offsetWidth || 1 : 1;
+        const view = anchor.ownerDocument.defaultView;
+        const w = box.offsetWidth / k;
+        // Beside the element's top-right corner, kept inside the page
+        const left = Math.min(Math.max(4, r.right + 8 / k), (view?.innerWidth ?? 0) - w - 4);
+        box.style.left = `${Math.max(4, left)}px`;
+        box.style.top = `${Math.min(Math.max(4, r.top), (view?.innerHeight ?? 0) - box.offsetHeight / k - 4)}px`;
+        box.style.scale = String(1 / k);
+      }
+      raf = requestAnimationFrame(tick);
+    };
+    tick();
+    return () => cancelAnimationFrame(raf);
+  }, [anchor]);
+  return (
+    <div ref={ref} className={s.composer}>
+      <textarea
+        // biome-ignore lint/a11y/noAutofocus: opened on purpose by the comment tool
+        autoFocus
+        className={s.composerInput}
+        rows={2}
+        value={text}
+        placeholder={placeholder}
+        onChange={(e) => setText(e.target.value)}
+        // Clicking away keeps what was typed
+        onBlur={() => {
+          if (done.current) return;
+          done.current = true;
+          if (text !== initial) onSubmit(text);
+          else onClose();
+        }}
+        onKeyDown={(e) => {
+          e.stopPropagation();
+          if (e.key === 'Escape') {
+            done.current = true;
+            onClose();
+          }
+          if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
+            e.preventDefault();
+            done.current = true;
+            onSubmit(text);
+          }
+        }}
+      />
+    </div>
+  );
+}

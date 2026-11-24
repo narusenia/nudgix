@@ -1,6 +1,6 @@
 {
   "name": "nudgix",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Nudge your local UI in the browser and turn the tweaks into a prompt for your coding agent",
   "license": "MIT",
   "type": "module",

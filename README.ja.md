@@ -34,6 +34,17 @@ nudgixは画面を枠の中に出し、その上で次のことを試せます�
 | `stylex` | `*.stylex.*`ファイルの`defineVars`。画面の変数とは値で突き合わせます | 変数：`colors.brand`、`space.s4` |
 | `css-vars` | 画面のスタイルシートで`:root`に書かれたカスタムプロパティ。どの構成でも動きます | 変数名：`--space-4` |
 
+## コーディングエージェント（MCP）
+
+`nudgix mcp`は、コーディングエージェント向けのMCPサーバーです。エージェントはプロンプトを貼ってもらう代わりに`get_nudges`で変更を読みます。直したあとは`check_nudges`を呼ぶと、エディタがプレビューを外して読み込み直した画面を確かめ、変更ごとに✓、✗（今の値つき）、?を返します。`nudgix start`とエディタのタブは開いたままにしてください。
+
+```sh
+claude mcp add nudgix -- npx nudgix mcp            # Claude Code
+codex mcp add nudgix -- npx nudgix mcp             # Codex
+```
+
+ほかのエージェントでも同じコマンド（`npx nudgix mcp`、エディタが4747番でなければ`--port`）を登録します。「変更」欄の確認ボタンでも、同じ確認を手で実行できます。
+
 ## オプション
 
 ```sh

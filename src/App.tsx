@@ -20,7 +20,8 @@ import { type Args, renderStory, type Story } from './lib/stories';
 import { DICTS, LangContext, type Lang } from './i18n';
 import { displayValue } from './lib/format';
 import { clearResolvedCache, describeElement, detect, detectAll, preview, previewRaw, resolveToken, similarTo } from './lib/inspect';
-import { PROP_BY_KEY, PROPS, tokenOf, type PropDef } from './lib/props';
+import { checkChanges, checkReport, type CheckResult } from './lib/check';
+import { LAYOUT_CSS, PROP_BY_KEY, PROPS, tokenOf, type PropDef } from './lib/props';
 import { findByLocator, loadSaved, locatorOf, save, setSaveScope } from './lib/persist';
 import { buildPrompt } from './lib/prompt';
 import { adapter, emptyTokens, setAdapter } from './lib/adapters';
@@ -35,13 +36,6 @@ const DENSITY_ZOOM: Record<Density, number> = { compact: 1, regular: 1.12, large
 const DENSITIES: Density[] = ['compact', 'regular', 'large'];
 type Op = { el: Element; key: PropKey; prev?: string; next?: string };
 type HistoryStep = { undo: () => void; redo: () => void };
-const LAYOUT_CSS: Record<LayoutKey, string> = {
-  display: 'display',
-  flexDirection: 'flex-direction',
-  justifyContent: 'justify-content',
-  alignItems: 'align-items',
-  flexWrap: 'flex-wrap',
-};
 const isEmpty = (c: Change) => countOf(c) === 0;
 
 // Remembers only appearance preferences. Where storage is unavailable, it just resets to defaults each time
@@ -1046,6 +1040,38 @@ export function App() {
   };
   const prompt = buildPrompt(changeList.map(([, c]) => c), tokens ?? emptyTokens(), t, !!status?.hasSkill);
 
+  // ---------------------------------------------------------------- checking the agent's edits, and the MCP handoff
+  const [checks, setChecks] = useState<Map<Element, CheckResult>>(new Map());
+  // A check describes the code at that moment. Any new change makes it stale
+  // biome-ignore lint: reset only when the changes change
+  useEffect(() => setChecks(new Map()), [prompt]);
+  const runCheck = async () => {
+    const results = await checkChanges(changeList, tokens ?? emptyTokens());
+    setChecks(results);
+    return checkReport(changeList, results);
+  };
+  // The MCP server (nudgix mcp) reads what the editor posts here. Agents get the full instructions, never the /apply-nudges form
+  const handoff = useRef({ prompt: '', run: runCheck, lastCheck: 0 });
+  handoff.current.prompt = changeList.length ? buildPrompt(changeList.map(([, c]) => c), tokens ?? emptyTokens(), t, false) : '';
+  handoff.current.run = runCheck;
+  useEffect(() => {
+    if (!ready) return;
+    const tick = async () => {
+      const state = await fetch('api/state').then((r) => r.json()).catch(() => null);
+      if (!state) return;
+      const h = handoff.current;
+      const body: Record<string, unknown> = { prompt: h.prompt };
+      if (state.checkRequest > h.lastCheck) {
+        h.lastCheck = state.checkRequest;
+        body.report = await h.run().catch((e) => `Check failed: ${e}`);
+        body.checkId = state.checkRequest;
+      }
+      await fetch('api/state', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) }).catch(() => {});
+    };
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [ready]);
+
   // ---------------------------------------------------------------- keyboard (called from both the editor and the iframe)
   const onKeyDown = (e: KeyboardEvent) => {
     // If the element being edited disappears in a rerender, blur never fires, so drop the edit state here
@@ -1403,7 +1429,7 @@ export function App() {
     ) : null;
 
   const changePanel = tokens ? (
-    <ChangeList changes={changeList} tokens={tokens} selectedEl={selected?.el ?? null} onSelect={select} onRevert={revert} onRevertAll={revertAll} />
+    <ChangeList changes={changeList} tokens={tokens} checks={checks} onCheck={runCheck} selectedEl={selected?.el ?? null} onSelect={select} onRevert={revert} onRevertAll={revertAll} />
   ) : null;
 
   const codeDrawer = codeOpen ? (

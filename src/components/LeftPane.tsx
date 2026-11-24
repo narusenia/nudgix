@@ -1,9 +1,11 @@
-import { ArrowRight, RotateCcw, Trash2 } from 'lucide-react';
+import { ArrowRight, ListChecks, RotateCcw, Trash2 } from 'lucide-react';
+import { useState } from 'react';
 import { useT } from '../i18n';
 import { deltaText } from '../lib/format';
 import { componentChain, resolveToken } from '../lib/inspect';
 import { PROP_BY_KEY, tokenOf } from '../lib/props';
 import { adapter } from '../lib/adapters';
+import type { CheckResult } from '../lib/check';
 import { shortDetection } from '../lib/prompt';
 import { countOf, type Change, type LayoutKey, type PropKey, type Tokens } from '../lib/types';
 import { IconButton, Tip } from './IconButton';
@@ -53,14 +55,31 @@ export function Breadcrumbs({ el, onSelect, onPeek }: { el: Element; onSelect: (
 type ChangeListProps = {
   changes: [Element, Change][];
   tokens: Tokens;
+  checks: Map<Element, CheckResult>;
+  onCheck: () => Promise<unknown>;
   selectedEl: Element | null;
   onSelect: (el: Element) => void;
   onRevert: (el: Element) => void;
   onRevertAll: () => void;
 };
 
-export function ChangeList({ changes, tokens, selectedEl, onSelect, onRevert, onRevertAll }: ChangeListProps) {
+/** Result of checking one element's changes against the page after the agent edited the code */
+function CheckBadge({ result }: { result: CheckResult }) {
   const t = useT();
+  const mark = { ok: '✓', ng: '✗', unknown: '?' } as const;
+  const detail = result.items.map((i) => `${mark[i.status]} ${i.label}${i.status === 'ng' && i.now ? ` (${t.checkNow(i.now)})` : ''}`).join('\n');
+  return (
+    <Tip label={`${t.checkStatus[result.status]}\n${detail}`}>
+      <span className={s.checkBadge} data-status={result.status} tabIndex={0}>
+        {mark[result.status]}
+      </span>
+    </Tip>
+  );
+}
+
+export function ChangeList({ changes, tokens, checks, onCheck, selectedEl, onSelect, onRevert, onRevertAll }: ChangeListProps) {
+  const t = useT();
+  const [checking, setChecking] = useState(false);
   const count = changes.reduce((n, [, c]) => n + countOf(c), 0);
   return (
     <section className={s.scrollPanel}>
@@ -70,6 +89,18 @@ export function ChangeList({ changes, tokens, selectedEl, onSelect, onRevert, on
         </h2>
         <span className={s.count}>{count}</span>
         <span className={s.spacer} />
+        {changes.length ? (
+          <IconButton
+            label={t.checkChanges}
+            disabled={checking}
+            onClick={() => {
+              setChecking(true);
+              onCheck().finally(() => setChecking(false));
+            }}
+          >
+            <ListChecks size={14} />
+          </IconButton>
+        ) : null}
         {changes.length ? (
           <IconButton label={t.revertAll} onClick={onRevertAll}>
             <Trash2 size={14} />
@@ -94,6 +125,7 @@ export function ChangeList({ changes, tokens, selectedEl, onSelect, onRevert, on
                     {change.insert?.importPath.replace(/^\.\//, '') ?? info.source?.self ?? `${info.route} · ${info.components.slice(1, 3).join(' < ') || info.tag}`}
                   </div>
                 </button>
+                {checks.get(el) ? <CheckBadge result={checks.get(el)!} /> : null}
                 {gone ? (
                   <Tip label={t.notOnPageHint}>
                     <span className={s.badge} tabIndex={0}>

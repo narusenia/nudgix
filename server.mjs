@@ -89,6 +89,9 @@ export async function startServer({ port = 4747, target, dir = process.cwd(), st
     return /\.(tsx?|jsx?|mjs|cjs|css|scss|vue|svelte|astro|html|mdx?)$/.test(abs) ? abs : null;
   }
 
+  /** Latest state from the editor: { prompt, report, checkId, at } plus checkRequest, the last check the MCP server asked for */
+  const handoff = { prompt: null, report: null, checkId: 0, checkRequest: 0, at: 0 };
+
   async function handleApi(req, res) {
     const url = req.url.split('?')[0];
     const query = new URL(req.url, 'http://x').searchParams;
@@ -97,6 +100,28 @@ export async function startServer({ port = 4747, target, dir = process.cwd(), st
       (req.headers.origin && req.headers.origin !== `http://${req.headers.host}`) ||
       (req.headers['sec-fetch-site'] && req.headers['sec-fetch-site'] !== 'same-origin');
     if (url.startsWith(`${BASE}api/`) && req.method !== 'GET' && crossSite) return sendJson(res, 403, { error: 'forbidden' }), true;
+
+    // Handoff to coding agents (nudgix mcp). The editor posts the current prompt and check results here,
+    // and the MCP server reads them or asks the editor to run a check
+    if (url === `${BASE}api/state`) {
+      if (crossSite) return sendJson(res, 403, { error: 'forbidden' }), true;
+      if (req.method === 'POST') {
+        try {
+          Object.assign(handoff, JSON.parse(await readBody(req)), { at: Date.now() });
+          sendJson(res, 200, { ok: true });
+        } catch {
+          sendJson(res, 400, { error: 'bad request' });
+        }
+        return true;
+      }
+      sendJson(res, 200, handoff);
+      return true;
+    }
+    if (url === `${BASE}api/check-request` && req.method === 'POST') {
+      handoff.checkRequest = (handoff.checkRequest ?? 0) + 1;
+      sendJson(res, 200, { id: handoff.checkRequest });
+      return true;
+    }
 
     if (url === `${BASE}api/status`) {
       const up = await targetUp();
@@ -324,6 +349,18 @@ function portIsUp(port, host) {
     socket.once('connect', () => (socket.destroy(), resolve(true)));
     socket.once('timeout', () => (socket.destroy(), resolve(false)));
     socket.once('error', () => resolve(false));
+  });
+}
+
+function readBody(req, limit = 1024 * 1024) {
+  return new Promise((resolve, reject) => {
+    let body = '';
+    req.on('data', (chunk) => {
+      body += chunk;
+      if (body.length > limit) reject(new Error('too large'));
+    });
+    req.on('end', () => resolve(body));
+    req.on('error', reject);
   });
 }
 

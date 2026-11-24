@@ -1,4 +1,4 @@
-import type { Category, PropKey, Token, Tokens } from './types';
+import type { Category, LayoutKey, PropKey, Token, Tokens } from './types';
 
 export type Group = 'color' | 'text' | 'space' | 'size' | 'radius' | 'effect';
 
@@ -43,6 +43,14 @@ export const PROPS: PropDef[] = [
 ];
 
 /** Look up a token by its saved name. Names not in the list are treated as values typed directly in the panel (13px, #ff0000 etc.) */
+export const LAYOUT_CSS: Record<LayoutKey, string> = {
+  display: 'display',
+  flexDirection: 'flex-direction',
+  justifyContent: 'justify-content',
+  alignItems: 'align-items',
+  flexWrap: 'flex-wrap',
+};
+
 export const tokenOf = (tokens: Tokens | null | undefined, category: Category, name: string | undefined): Token | undefined => {
   if (!name) return undefined;
   return tokens?.[category].find((x) => x.name === name) ?? { name, description: '', raw: true };

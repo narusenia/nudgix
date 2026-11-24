@@ -1,11 +1,15 @@
 #!/usr/bin/env node
 // nudgix start [--port 4747] [--target 3000] [--dir .] [--storybook 6006] [--no-open]
+// nudgix mcp [--port 4747]
 import { parseArgs } from 'node:util';
 import { startServer } from '../server.mjs';
+import { startMcp } from '../server/mcp.mjs';
 
 const HELP = `Usage: nudgix start [options]
+       nudgix mcp [--port <n>]
 
-Run it in your project folder while the dev server is running.
+Run start in your project folder while the dev server is running.
+mcp is an MCP server (stdio) for coding agents. It reads the changes from a running nudgix start.
 
 Options:
   --port <n>        Port for the editor (default 4747)
@@ -28,20 +32,24 @@ const { values, positionals } = parseArgs({
 });
 
 const command = positionals[0] ?? 'start';
-if (values.help || command !== 'start') {
+if (values.help || (command !== 'start' && command !== 'mcp')) {
   console.log(HELP);
   process.exit(values.help ? 0 : 1);
 }
 
-try {
-  await startServer({
-    port: Number(values.port ?? process.env.PORT ?? 4747),
-    target: values.target ?? process.env.TARGET,
-    dir: values.dir,
-    storybook: values.storybook ?? process.env.STORYBOOK ?? '6006',
-    open: !values['no-open'] && !process.env.NO_OPEN,
-  });
-} catch (error) {
-  console.error(`nudgix: ${error.message}`);
-  process.exit(1);
+if (command === 'mcp') {
+  startMcp({ port: Number(values.port ?? process.env.PORT ?? 4747) });
+} else {
+  try {
+    await startServer({
+      port: Number(values.port ?? process.env.PORT ?? 4747),
+      target: values.target ?? process.env.TARGET,
+      dir: values.dir,
+      storybook: values.storybook ?? process.env.STORYBOOK ?? '6006',
+      open: !values['no-open'] && !process.env.NO_OPEN,
+    });
+  } catch (error) {
+    console.error(`nudgix: ${error.message}`);
+    process.exit(1);
+  }
 }

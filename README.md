@@ -34,6 +34,17 @@ nudgix reads tokens through an adapter, picked from `package.json`.
 | `stylex` | `defineVars` in `*.stylex.*` files, matched to the page's variables by value | Variables: `colors.brand`, `space.s4` |
 | `css-vars` | Custom properties on `:root` in the page's stylesheets. Works with any setup | Variable names: `--space-4` |
 
+## Coding agents (MCP)
+
+`nudgix mcp` is an MCP server for coding agents. The agent reads the changes with `get_nudges` instead of you pasting the prompt, and after editing it calls `check_nudges`: the editor takes its previews off, reads the reloaded page and answers ✓, ✗ (with the value the page has now) or ? per change. Keep `nudgix start` and the editor tab running.
+
+```sh
+claude mcp add nudgix -- npx nudgix mcp            # Claude Code
+codex mcp add nudgix -- npx nudgix mcp             # Codex
+```
+
+Other agents take the same command (`npx nudgix mcp`, plus `--port` if the editor is not on 4747). The check button in the Changes panel runs the same check by hand.
+
 ## Options
 
 ```sh

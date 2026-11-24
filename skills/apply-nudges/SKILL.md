@@ -108,6 +108,10 @@ note "Make this card stand out as the recommended plan"
 
 A comment the user wrote about the element in their own words. Treat it as a request for that element, alongside the other lines. If it is vague or would need a design decision, ask before editing.
 
+## Checking the result
+
+If the nudgix MCP server is connected, call `check_nudges` after editing. It compares each change with the reloaded page: fix every ✗ line (it shows the value the page has now) and report the ? lines as not checked.
+
 ## Adapters
 
 ### css-vars

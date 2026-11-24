@@ -140,6 +140,30 @@ function setInline(el: Element, css: string, value: string) {
   style.setProperty(css, value, 'important');
 }
 
+/**
+ * Run fn while the elements show only the page's own styles (previews and nudgix's transitions removed), then put
+ * the previews back. Everything happens in one task, so nothing is painted in between
+ */
+export function withoutPreviews<T>(els: Element[], fn: () => T): T {
+  const stash = els.map((el) => [el as HTMLElement, el.getAttribute('style')] as const);
+  for (const [el] of stash) {
+    const saved = originals.get(el);
+    if (saved) for (const [css, [value, priority]] of saved) value ? el.style.setProperty(css, value, priority) : el.style.removeProperty(css);
+    el.style.setProperty('transition', 'none', 'important');
+  }
+  try {
+    return fn();
+  } finally {
+    for (const [el, style] of stash) {
+      // Restore the previews without a transition first, so going back does not animate
+      el.setAttribute('style', `${style ?? ''};transition:none !important`);
+      void el.ownerDocument.defaultView?.getComputedStyle(el).opacity;
+      if (style === null) el.removeAttribute('style');
+      else el.setAttribute('style', style);
+    }
+  }
+}
+
 export function restoreInline(el: Element, cssList: string[]) {
   const style = (el as HTMLElement).style;
   const saved = originals.get(el);

@@ -1,13 +1,14 @@
 import { Toggle } from '@base-ui/react/toggle';
 import { ToggleGroup } from '@base-ui/react/toggle-group';
 import { Tooltip } from '@base-ui/react/tooltip';
-import { ALargeSmall, ArrowLeft, ArrowRight, Blend, ChevronDown, ChevronUp, CodeXml, Columns3, Copy, Command as CommandIcon, Maximize2, Moon, MousePointer2, Redo2, RotateCw, ScanSearch, SquareSplitHorizontal, Sun, Undo2 } from 'lucide-react';
+import { ALargeSmall, ArrowLeft, ArrowRight, Blend, ChevronDown, ChevronUp, CodeXml, Columns3, Copy, Command as CommandIcon, Maximize2, MessageSquarePlus, Moon, MousePointer2, Redo2, RotateCw, ScanSearch, SquareSplitHorizontal, Sun, Undo2 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import { Canvas, type Width } from './components/Canvas';
 import { CodeDrawer, InlinePeek } from './components/CodeView';
 import { Handles } from './components/Handles';
 import { CommandPalette, type Command } from './components/CommandPalette';
 import { Specimen } from './components/Specimen';
+import { CommentPins } from './components/CommentPins';
 import { IconButton, Tip } from './components/IconButton';
 import { Breadcrumbs, ChangeList } from './components/LeftPane';
 import { PromptPanel } from './components/PromptPanel';
@@ -149,6 +150,12 @@ export function App() {
   const [route, setRoute] = useState('/');
   const [width, setWidth] = useState<Width>('fit');
   const [picking, setPicking] = useState(false);
+  // Comment tool: pick an element (or drag around several), then type straight into the comment field
+  const [commenting, setCommenting] = useState(false);
+  const [noteFocus, setNoteFocus] = useState(0);
+  useEffect(() => {
+    if (!picking) setCommenting(false);
+  }, [picking]);
   const [selection, setSelection] = useState<Selected[]>([]);
   const selected = selection.at(-1) ?? null;
   const [zoom, setZoom] = useState(false);
@@ -759,19 +766,29 @@ export function App() {
   };
 
   /** Comment for the agent on one element. Undoable like the other changes */
-  const setNote = (el: Element, value: string) => {
-    const before = changes.current.get(el)?.note;
-    const next = value.trim() || undefined;
-    if (before === next) return;
-    const write = (note: string | undefined) => {
+  const setNote = (el: Element, value: string, scope?: string[]) => {
+    const before = { note: changes.current.get(el)?.note, scope: changes.current.get(el)?.noteScope };
+    const next = { note: value.trim() || undefined, scope: value.trim() && scope?.length ? scope : undefined };
+    if (before.note === next.note && String(before.scope) === String(next.scope)) return;
+    const write = (v: typeof next) => {
       const e = ensureEntry(el);
-      if (note) e.note = note;
+      if (v.note) e.note = v.note;
       else delete e.note;
+      if (v.scope) e.noteScope = v.scope;
+      else delete e.noteScope;
       settle(el);
     };
     write(next);
     push({ undo: () => write(before), redo: () => write(next) });
   };
+
+  /** Several selected elements share one comment, kept on their nearest common parent */
+  const noteTarget = (els: Element[]) => {
+    let parent: Element | null = els[0];
+    while (parent && !els.every((el) => parent!.contains(el))) parent = parent.parentElement;
+    return parent ?? els[0].ownerDocument.body;
+  };
+  const scopeName = (el: Element) => describeElement(el).components[0] ?? (el.classList[0] ? `.${el.classList[0]}` : el.tagName.toLowerCase());
 
   // ---------------------------------------------------------------- text editing
   /** For a text-only element, rewrite its text node in place (so the node React holds is not replaced) */
@@ -1051,7 +1068,8 @@ export function App() {
     return checkReport(changeList, results);
   };
   // The MCP server (nudgix mcp) reads what the editor posts here. Agents get the full instructions, never the /apply-nudges form
-  const handoff = useRef({ prompt: '', run: runCheck, lastCheck: 0 });
+  // lastCheck starts unknown, so check requests left over from before this tab opened are skipped
+  const handoff = useRef({ prompt: '', run: runCheck, lastCheck: -1 });
   handoff.current.prompt = changeList.length ? buildPrompt(changeList.map(([, c]) => c), tokens ?? emptyTokens(), t, false) : '';
   handoff.current.run = runCheck;
   useEffect(() => {
@@ -1061,7 +1079,8 @@ export function App() {
       if (!state) return;
       const h = handoff.current;
       const body: Record<string, unknown> = { prompt: h.prompt };
-      if (state.checkRequest > h.lastCheck) {
+      if (h.lastCheck < 0) h.lastCheck = state.checkRequest;
+      else if (state.checkRequest > h.lastCheck) {
         h.lastCheck = state.checkRequest;
         body.report = await h.run().catch((e) => `Check failed: ${e}`);
         body.checkId = state.checkRequest;
@@ -1127,6 +1146,9 @@ export function App() {
     if (key === 's') {
       e.preventDefault();
       setPicking((p) => !p);
+    } else if (key === 'm') {
+      e.preventDefault();
+      toggleComment();
     } else if (key === 'z') {
       e.preventDefault();
       setZoom((z) => !z);
@@ -1212,10 +1234,19 @@ export function App() {
     </IconButton>
   );
 
+  const toggleComment = () => {
+    setCommenting(!commenting);
+    setPicking(!commenting);
+  };
   const pickButton = (
-    <IconButton label={t.pick} shortcut="S" pressed={picking} variant={picking ? 'primary' : 'ghost'} onClick={() => setPicking((p) => !p)}>
-      <MousePointer2 size={14} />
-    </IconButton>
+    <>
+      <IconButton label={t.pick} shortcut="S" pressed={picking && !commenting} variant={picking && !commenting ? 'primary' : 'ghost'} onClick={() => (commenting ? setCommenting(false) : setPicking((p) => !p))}>
+        <MousePointer2 size={14} />
+      </IconButton>
+      <IconButton label={t.commentTool} shortcut="M" pressed={commenting} variant={commenting ? 'primary' : 'ghost'} onClick={toggleComment}>
+        <MessageSquarePlus size={14} />
+      </IconButton>
+    </>
   );
 
   const copyPrompt = () => navigator.clipboard.writeText(prompt).catch(() => {});
@@ -1350,10 +1381,12 @@ export function App() {
         // Holding Shift keeps adding in selection mode
         if (!additive) setPicking(false);
         select(el, additive);
+        if (commenting && !additive) setNoteFocus((n) => n + 1);
       }}
       onPickMany={(els, additive) => {
         setPicking(false);
         selectMany(els, additive);
+        if (commenting) setNoteFocus((n) => n + 1);
       }}
       onKeyDown={onKeyDown}
       onKeyUp={onKeyUp}
@@ -1384,6 +1417,15 @@ export function App() {
           onSimilar={selectSimilar}
         />
       ) : null}
+      <CommentPins
+        pins={changeList
+          .filter(([, c]) => c.note && c.info.tag !== 'body')
+          .map(([el, c]) => ({ el, note: c.note!, label: c.noteScope?.length ? c.noteScope.join(', ') : (c.info.components[0] ?? c.info.tag) }))}
+        onSelect={(el) => {
+          setPicking(false);
+          select(el);
+        }}
+      />
       {inlinePeek && selected?.el.isConnected && !picking ? <InlinePeek el={selected.el} change={changes.current.get(selected.el)} /> : null}
       {dropHint ? (
         <div className={s.handles}>
@@ -1424,12 +1466,18 @@ export function App() {
         }}
         onRestore={restoreCommitted}
         onCommit={commit}
-        onNote={(note) => setNote(selected.el, note)}
+        noteFocus={noteFocus}
+        note={(selection.length > 1 ? changes.current.get(noteTarget(selection.map((x) => x.el))) : changes.current.get(selected.el))?.note ?? ''}
+        onNote={(note) =>
+          selection.length > 1
+            ? setNote(noteTarget(selection.map((x) => x.el)), note, selection.map((x) => scopeName(x.el)))
+            : setNote(selected.el, note)
+        }
       />
     ) : null;
 
   const changePanel = tokens ? (
-    <ChangeList changes={changeList} tokens={tokens} checks={checks} onCheck={runCheck} selectedEl={selected?.el ?? null} onSelect={select} onRevert={revert} onRevertAll={revertAll} />
+    <ChangeList changes={changeList} tokens={tokens} checks={checks} body={ready ? (frameRef.current?.contentDocument?.body ?? null) : null} onPageNote={(note) => { const body = frameRef.current?.contentDocument?.body; if (body) setNote(body, note); }} onCheck={runCheck} selectedEl={selected?.el ?? null} onSelect={select} onRevert={revert} onRevertAll={revertAll} />
   ) : null;
 
   const codeDrawer = codeOpen ? (

@@ -7,6 +7,7 @@ import { PROP_BY_KEY, tokenOf } from '../lib/props';
 import { adapter } from '../lib/adapters';
 import type { CheckResult } from '../lib/check';
 import { shortDetection } from '../lib/prompt';
+import { NoteField } from './PropertyPanel';
 import { countOf, type Change, type LayoutKey, type PropKey, type Tokens } from '../lib/types';
 import { IconButton, Tip } from './IconButton';
 import { Specimen } from './Specimen';
@@ -56,6 +57,9 @@ type ChangeListProps = {
   changes: [Element, Change][];
   tokens: Tokens;
   checks: Map<Element, CheckResult>;
+  /** The page's body, which holds the comment on the whole page */
+  body: Element | null;
+  onPageNote: (note: string) => void;
   onCheck: () => Promise<unknown>;
   selectedEl: Element | null;
   onSelect: (el: Element) => void;
@@ -77,7 +81,7 @@ function CheckBadge({ result }: { result: CheckResult }) {
   );
 }
 
-export function ChangeList({ changes, tokens, checks, onCheck, selectedEl, onSelect, onRevert, onRevertAll }: ChangeListProps) {
+export function ChangeList({ changes, tokens, checks, body, onPageNote, onCheck, selectedEl, onSelect, onRevert, onRevertAll }: ChangeListProps) {
   const t = useT();
   const [checking, setChecking] = useState(false);
   const count = changes.reduce((n, [, c]) => n + countOf(c), 0);
@@ -107,6 +111,11 @@ export function ChangeList({ changes, tokens, checks, onCheck, selectedEl, onSel
           </IconButton>
         ) : null}
       </div>
+      {body ? (
+        <div className={s.pageNote}>
+          <NoteField el={body} value={changes.find(([el]) => el === body)?.[1].note ?? ''} placeholder={t.notePage} onCommit={onPageNote} />
+        </div>
+      ) : null}
       {changes.length === 0 ? <p className={s.empty}>{t.noChanges}</p> : null}
       <ul className={s.changeList}>
         {changes.map(([el, change], i) => {
@@ -118,11 +127,11 @@ export function ChangeList({ changes, tokens, checks, onCheck, selectedEl, onSel
               <div className={s.changeHead}>
                 <button type="button" className={s.changeTitleButton} disabled={gone} onClick={() => onSelect(el)}>
                   <div className={s.changeTitle}>
-                    {change.insert ? `${change.insert.title.split('/').at(-1)} › ${change.insert.name}` : (info.components[0] ?? info.tag)}
-                    {!change.insert && info.text ? t.quote(info.text.slice(0, 20)) : ''}
+                    {info.tag === 'body' ? t.pageLabel : change.insert ? `${change.insert.title.split('/').at(-1)} › ${change.insert.name}` : (info.components[0] ?? info.tag)}
+                    {!change.insert && info.tag !== 'body' && info.text ? t.quote(info.text.slice(0, 20)) : ''}
                   </div>
                   <div className={s.changeWhere}>
-                    {change.insert?.importPath.replace(/^\.\//, '') ?? info.source?.self ?? `${info.route} · ${info.components.slice(1, 3).join(' < ') || info.tag}`}
+                    {info.tag === 'body' ? info.route : change.insert?.importPath.replace(/^\.\//, '') ?? info.source?.self ?? `${info.route} · ${info.components.slice(1, 3).join(' < ') || info.tag}`}
                   </div>
                 </button>
                 {checks.get(el) ? <CheckBadge result={checks.get(el)!} /> : null}

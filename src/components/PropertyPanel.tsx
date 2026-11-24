@@ -27,6 +27,10 @@ type Props = {
   onPreview: (prop: PropDef, token: Token | undefined) => void;
   onRestore: (prop: PropDef) => void;
   onCommit: (prop: PropDef, name: string | null) => void;
+  /** Comment for the selection. With several elements selected it belongs to their common parent */
+  note: string;
+  /** Bumped by the comment tool to put the cursor in the comment field */
+  noteFocus: number;
   onNote: (note: string) => void;
 };
 
@@ -44,16 +48,27 @@ function describe(d: Detection, t: Dict, category: Category): { text: string; hi
 const px = (v: string | undefined) => (v && /^-?[\d.]+px$/.test(v) ? Number.parseFloat(v) : null);
 
 /** Comment for the agent. Kept local while typing and committed once, so undo restores the whole comment */
-function NoteField({ el, value, onCommit }: { el: Element; value: string; onCommit: (note: string) => void }) {
+export function NoteField({
+  el,
+  value,
+  placeholder,
+  focusKey = 0,
+  onCommit,
+}: { el: Element; value: string; placeholder?: string; focusKey?: number; onCommit: (note: string) => void }) {
   const t = useT();
   const [draft, setDraft] = useState(value);
+  const ref = useRef<HTMLTextAreaElement>(null);
+  useEffect(() => {
+    if (focusKey) ref.current?.focus();
+  }, [focusKey]);
   useEffect(() => setDraft(value), [value, el]);
   return (
     <textarea
+      ref={ref}
       className={s.noteInput}
       rows={draft.includes('\n') ? 3 : 1}
       value={draft}
-      placeholder={t.notePlaceholder}
+      placeholder={placeholder ?? t.notePlaceholder}
       title={t.noteHint}
       onChange={(e) => setDraft(e.target.value)}
       onBlur={() => draft !== value && onCommit(draft)}
@@ -151,7 +166,7 @@ export function PropertyPanel(props: Props) {
           </IconButton>
         </div>
         {info.text && count === 1 ? <div className={s.targetText}>{t.quote(info.text)}</div> : null}
-        {count === 1 ? <NoteField el={selected.el} value={change?.note ?? ''} onCommit={props.onNote} /> : null}
+        <NoteField el={selected.el} focusKey={props.noteFocus} value={props.note} placeholder={count > 1 ? t.noteMany(count) : undefined} onCommit={props.onNote} />
         <div className={`${s.seg} ${s.panelTabs}`}>
           {(['props', 'code'] as const).map((k) => (
             <button key={k} type="button" className={s.segItem} data-pressed={tab === k ? '' : undefined} onClick={() => pickTab(k)}>

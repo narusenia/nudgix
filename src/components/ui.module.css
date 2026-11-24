@@ -555,6 +555,11 @@
   font-weight: 600;
 }
 
+/* Comment on the whole page, above the change list */
+.pageNote {
+  padding: 0 12px 8px;
+}
+
 /* Check result next to a change */
 .checkBadge {
   display: inline-grid;
@@ -1480,6 +1485,90 @@
 }
 
 /* ---------------------------------------------------------------- on-page handles */
+/* Comment pins (Figma-like) over commented elements */
+.pinLayer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.pin {
+  position: absolute;
+  z-index: 6;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 2px solid #fff;
+  border-radius: 12px 12px 12px 2px;
+  font: 600 11px/1 var(--sans, inherit);
+  color: #fff;
+  background: var(--accent);
+  box-shadow: 0 2px 6px rgb(0 0 0 / 0.25);
+  transform-origin: top left;
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.pin:hover,
+.pin[data-open] {
+  filter: brightness(1.1);
+  z-index: 7;
+}
+
+/* Card shown while a pin is hovered */
+.pinCard {
+  position: absolute;
+  z-index: 8;
+  width: 260px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--panel);
+  box-shadow: var(--shadow);
+  color: var(--text);
+  transform-origin: top left;
+  pointer-events: none;
+}
+
+.pinCardHead {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  margin-bottom: 6px;
+  font: 11px var(--mono);
+  color: var(--sub);
+}
+
+.pinCardNum {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 9px 9px 9px 2px;
+  font: 600 10px/1 inherit;
+  color: #fff;
+  background: var(--accent);
+}
+
+.pinCardBody {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* Outline of the element the hovered pin belongs to */
+.pinOutline {
+  position: absolute;
+  border: 1.5px dashed var(--accent);
+  border-radius: 4px;
+  pointer-events: none;
+}
+
 .handles {
   position: absolute;
   inset: 0;

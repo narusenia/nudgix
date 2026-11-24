@@ -15,6 +15,10 @@ export function shortDetection(d: Detection, key: string): string {
   return `(${d.value})`;
 }
 
+/** ['Card', 'Card', 'h2'] → 'Card ×2, h2' */
+const groupNames = (names: string[]) =>
+  [...names.reduce((m, n) => m.set(n, (m.get(n) ?? 0) + 1), new Map<string, number>())].map(([n, c]) => (c > 1 ? `${n} ×${c}` : n)).join(', ');
+
 const signed = (n: number) => `${n >= 0 ? '+' : ''}${Math.round(n)}`;
 
 function changeLines(change: Change, tokens: Tokens): string[] {
@@ -43,7 +47,10 @@ function changeLines(change: Change, tokens: Tokens): string[] {
   if (change.removed) lines.push('remove');
   if (change.text) lines.push(`text "${change.text.from}"→"${change.text.to}"`);
   if (change.nudge) lines.push(`offset x${signed(change.nudge.x)} y${signed(change.nudge.y)}px`);
-  if (change.note) lines.push(`note ${JSON.stringify(change.note)}`);
+  if (change.note) {
+    const scope = change.noteScope?.length ? `about ${groupNames(change.noteScope)} ` : change.info.tag === 'body' ? 'about the whole page ' : '';
+    lines.push(`note ${scope}${JSON.stringify(change.note)}`);
+  }
   return lines;
 }
 
@@ -54,7 +61,9 @@ export function buildPrompt(changes: Change[], tokens: Tokens, t: Dict, withSkil
     const src = info.source;
     const story = rest.insert;
     const where = (
-      story
+      info.tag === 'body'
+        ? [info.route]
+        : story
         ? [`${story.title} › ${story.name}`, story.importPath.replace(/^\.\//, '')]
         : src?.self
         ? [src.self, src.usage ? `(${src.usage})` : null, info.components[0], info.text ? `"${info.text}"` : null, `<${info.tag}>`]

@@ -92,6 +92,8 @@ export type Change = {
   text?: { from: string; to: string };
   /** Free-form note for the coding agent, in the user's own words */
   note?: string;
+  /** When the comment is about several elements (marquee selection), short names of them. The note sits on their common parent */
+  noteScope?: string[];
   /** For saving and reapplying. Position from body */
   locator?: string;
 };

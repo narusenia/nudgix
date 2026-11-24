@@ -1,6 +1,7 @@
 // Keeps the differences between styling systems in one place. The base is css-vars (reads only the page's CSS variables and CSS rules),
 // which works with any setup. Adapters for Tailwind and others improve how tokens are read and how prompts are written
 import { declaredValue, matchedRules, rootRules, rootVariables } from './css';
+import { authoredSelector } from './states';
 import type { PropDef } from './props';
 import type { Category, PropKey, Token, Tokens } from './types';
 
@@ -57,7 +58,7 @@ const cssVars: Adapter = {
   },
   format: (_key, name) => name,
   written: (_key, name) => [name],
-  hints: (el) => [...new Set(matchedRules(el).map((r) => r.selectorText))].slice(-4),
+  hints: (el) => [...new Set(matchedRules(el).map((r) => authoredSelector(r.selectorText)))].slice(-4),
 };
 
 // Tailwind utilities per property, most specific first (pt-4 beats py-4 beats p-4)

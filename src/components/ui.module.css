@@ -1485,6 +1485,35 @@
 }
 
 /* ---------------------------------------------------------------- on-page handles */
+/* Forced state chips (hover, focus, active) under the target name */
+.stateRow {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 6px;
+}
+
+.stateLabel {
+  margin-right: 2px;
+  font-size: 11px;
+  color: var(--sub);
+}
+
+.stateChip {
+  padding: 2px 7px;
+  border: 0;
+  border-radius: 6px;
+  font: 11px var(--mono);
+  color: var(--sub);
+  background: var(--well);
+  cursor: pointer;
+}
+
+.stateChip[data-on] {
+  color: #fff;
+  background: var(--accent);
+}
+
 /* Comment pins (Figma-like) over commented elements */
 .pinLayer {
   position: absolute;

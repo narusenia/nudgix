@@ -27,6 +27,7 @@ function changeLines(change: Change, tokens: Tokens): string[] {
   // Non-token values (typed directly in the panel) are wrapped in parentheses, like "current"
   const shown = (key: PropKey, v: string, as: string = key) => (tokenOf(tokens, PROP_BY_KEY[key].category, v)?.raw ? `(${v})` : adapter().format(as, v));
   const lines: string[] = [];
+  if (change.state?.length) lines.push(`state ${change.state.join(', ')}`);
   for (const merge of MERGES) {
     const values = merge.keys.map((k) => props[k]);
     // Compare what was detected, not how it is written (Tailwind writes pt-4 and pb-4 for the same token)

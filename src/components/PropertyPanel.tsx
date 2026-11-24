@@ -6,6 +6,7 @@ import { useT, type Dict } from '../i18n';
 import { resolveToken } from '../lib/inspect';
 import { deltaText, displayValue } from '../lib/format';
 import { PROP_BY_KEY, PROPS, rawValue, tokenOf, type PropDef } from '../lib/props';
+import { ELEMENT_STATES, type ElementState } from '../lib/states';
 import type { Category, Change, Detection, LayoutKey, PropKey, Selected, Token, Tokens } from '../lib/types';
 import { CodeTab } from './CodeView';
 import { IconButton, Tip } from './IconButton';
@@ -29,6 +30,9 @@ type Props = {
   onCommit: (prop: PropDef, name: string | null) => void;
   /** Comment for the selection. With several elements selected it belongs to their common parent */
   note: string;
+  /** States forced on the element (hover, focus, active) */
+  states: ElementState[];
+  onState: (state: ElementState) => void;
   /** Bumped by the comment tool to put the cursor in the comment field */
   noteFocus: number;
   onNote: (note: string) => void;
@@ -166,6 +170,14 @@ export function PropertyPanel(props: Props) {
           </IconButton>
         </div>
         {info.text && count === 1 ? <div className={s.targetText}>{t.quote(info.text)}</div> : null}
+        <div className={s.stateRow}>
+          <span className={s.stateLabel}>{t.stateLabel}</span>
+          {ELEMENT_STATES.map((st) => (
+            <button key={st} type="button" className={s.stateChip} data-on={props.states.includes(st) ? '' : undefined} aria-pressed={props.states.includes(st)} onClick={() => props.onState(st)}>
+              :{t.stateNames[st]}
+            </button>
+          ))}
+        </div>
         <NoteField el={selected.el} focusKey={props.noteFocus} value={props.note} placeholder={count > 1 ? t.noteMany(count) : undefined} onCommit={props.onNote} />
         <div className={`${s.seg} ${s.panelTabs}`}>
           {(['props', 'code'] as const).map((k) => (

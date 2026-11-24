@@ -4,6 +4,7 @@
   --color-text: #1d1d22;
   --color-text-muted: #6b6b76;
   --color-accent: #4f46e5;
+  --color-accent-strong: #3730a3;
   --color-accent-soft: #e0e7ff;
   --color-border: #e4e4e9;
 
@@ -31,4 +32,15 @@
   --shadow-md: 0 4px 12px rgb(0 0 0 / 0.08);
 
   --size-content: 960px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-bg: #16161a;
+    --color-surface: #222228;
+    --color-text: #f2f2f5;
+    --color-text-muted: #a1a1ab;
+    --color-accent-soft: #312e81;
+    --color-border: #34343c;
+  }
 }

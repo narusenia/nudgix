@@ -94,6 +94,8 @@ export type Change = {
   note?: string;
   /** When the comment is about several elements (marquee selection), short names of them. The note sits on their common parent */
   noteScope?: string[];
+  /** States forced while the change was made (hover, focus, active, dark). The change is for that state */
+  state?: string[];
   /** For saving and reapplying. Position from body */
   locator?: string;
 };

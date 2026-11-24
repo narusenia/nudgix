@@ -1,7 +1,7 @@
 import { Toggle } from '@base-ui/react/toggle';
 import { ToggleGroup } from '@base-ui/react/toggle-group';
 import { Tooltip } from '@base-ui/react/tooltip';
-import { ALargeSmall, ArrowLeft, ArrowRight, Blend, ChevronDown, ChevronUp, CodeXml, Columns3, Copy, Command as CommandIcon, Maximize2, MessageSquarePlus, Moon, MousePointer2, Redo2, RotateCw, ScanSearch, SquareSplitHorizontal, Sun, Undo2 } from 'lucide-react';
+import { ALargeSmall, ArrowLeft, ArrowRight, Blend, ChevronDown, ChevronUp, CodeXml, Columns3, Copy, Command as CommandIcon, Maximize2, MessageSquarePlus, Moon, MoonStar, MousePointer2, Redo2, RotateCw, ScanSearch, SquareSplitHorizontal, Sun, Undo2 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import { Canvas, type Width } from './components/Canvas';
 import { CodeDrawer, InlinePeek } from './components/CodeView';
@@ -21,6 +21,7 @@ import { type Args, renderStory, type Story } from './lib/stories';
 import { DICTS, LangContext, type Lang } from './i18n';
 import { displayValue } from './lib/format';
 import { clearResolvedCache, describeElement, detect, detectAll, preview, previewRaw, resolveToken, similarTo } from './lib/inspect';
+import { type ElementState, setDark, setStates, statesOf } from './lib/states';
 import { checkChanges, checkReport, type CheckResult } from './lib/check';
 import { LAYOUT_CSS, PROP_BY_KEY, PROPS, tokenOf, type PropDef } from './lib/props';
 import { findByLocator, loadSaved, locatorOf, save, setSaveScope } from './lib/persist';
@@ -159,6 +160,9 @@ export function App() {
   const [selection, setSelection] = useState<Selected[]>([]);
   const selected = selection.at(-1) ?? null;
   const [zoom, setZoom] = useState(false);
+  const [pageDark, setPageDark] = useState(false);
+  const pageDarkRef = useRef(false);
+  pageDarkRef.current = pageDark;
   const [before, setBefore] = useState(false);
   const [peek, setPeek] = useState<Element | null>(null);
   const [paletteOpen, setPaletteOpen] = useState(false);
@@ -332,6 +336,7 @@ export function App() {
         changes.current.set(op.el, (entry = { info: snap.info, baseline: snap.baseline, props: {}, locator: locatorOf(op.el) }));
       }
       if (!entry) continue;
+      stamp(entry, op.el);
       if (name && !sameAsBefore(entry.baseline[op.key], prop, name)) entry.props[op.key] = name;
       else delete entry.props[op.key];
       if (isEmpty(entry)) changes.current.delete(op.el);
@@ -366,13 +371,46 @@ export function App() {
     history.current.undo.push(step);
   };
 
+  /** Remember the forced states on the change, so the prompt says which state it is for */
+  const stamp = (entry: Change, el: Element) => {
+    const state = [...statesOf(el), ...(pageDarkRef.current ? ['dark'] : [])];
+    if (state.length) entry.state = state;
+    else delete entry.state;
+    return entry;
+  };
+
   const ensureEntry = (el: Element) => {
     let entry = changes.current.get(el);
     if (!entry) {
       const snap = snapshot(el);
       changes.current.set(el, (entry = { info: snap.info, baseline: snap.baseline, props: {}, locator: locatorOf(el) }));
     }
-    return entry;
+    return stamp(entry, el);
+  };
+
+  /** Turn a forced state on or off for the selection. The "current" values are read again in that state */
+  const toggleState = (state: ElementState) => {
+    const on = !statesOf(selection.at(-1)!.el).includes(state);
+    for (const { el } of selection) {
+      setStates(el, on ? [...statesOf(el), state] : statesOf(el).filter((s) => s !== state));
+      snapshots.current.delete(el);
+    }
+    selectMany(selection.map((x) => x.el), false);
+  };
+
+  // A reload brings a fresh document, so dark mode is applied again
+  // biome-ignore lint: tokens are refetched on every iframe load, so use them as the trigger
+  useEffect(() => {
+    const doc = frameRef.current?.contentDocument;
+    if (doc && pageDark) setDark(doc, true);
+  }, [tokens, route]);
+
+  const togglePageDark = () => {
+    const doc = frameRef.current?.contentDocument;
+    if (doc) setDark(doc, !pageDark);
+    setPageDark(!pageDark);
+    for (const { el } of selection) snapshots.current.delete(el);
+    if (selection.length) selectMany(selection.map((x) => x.el), false);
   };
 
   const settle = (el: Element) => {
@@ -1335,6 +1373,9 @@ export function App() {
       >
         <SquareSplitHorizontal size={14} />
       </IconButton>
+      <IconButton label={t.pageDark} pressed={pageDark} variant={pageDark ? 'primary' : 'ghost'} onClick={togglePageDark}>
+        <MoonStar size={14} />
+      </IconButton>
     </>
   );
 
@@ -1466,6 +1507,8 @@ export function App() {
         }}
         onRestore={restoreCommitted}
         onCommit={commit}
+        states={statesOf(selected.el)}
+        onState={toggleState}
         noteFocus={noteFocus}
         note={(selection.length > 1 ? changes.current.get(noteTarget(selection.map((x) => x.el))) : changes.current.get(selected.el))?.note ?? ''}
         onNote={(note) =>

@@ -5,6 +5,7 @@ import { IGNORED_COMPONENTS } from './inspect';
 import { adapter } from './adapters';
 import { fileOf, matchedRules } from './css';
 import { getProjectDir, relativeToProject } from './project';
+import { authoredSelector } from './states';
 import { fiberOf, resolveStack, serverOwners, sourceOf, stackOf } from './sourcemap';
 import type { Change, PropKey } from './types';
 
@@ -255,7 +256,7 @@ export async function locate(el: Element): Promise<{ self: string | null; usage:
   for (const rule of matchedRules(el).reverse()) {
     const file = fileOf(rule, getProjectDir());
     if (!file) continue;
-    const res = await fetch(`api/find?file=${encodeURIComponent(file)}&text=${encodeURIComponent(rule.selectorText.split(',')[0].trim())}`).catch(() => null);
+    const res = await fetch(`api/find?file=${encodeURIComponent(file)}&text=${encodeURIComponent(authoredSelector(rule.selectorText.split(',')[0].trim()))}`).catch(() => null);
     const line = res?.ok ? ((await res.json()) as { line: number | null }).line : null;
     return { self: `${file}:${line ?? 1}`, usage: null };
   }

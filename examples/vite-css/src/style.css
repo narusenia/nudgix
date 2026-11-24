@@ -56,6 +56,10 @@ body {
   color: var(--color-surface);
 }
 
+.button--primary:hover {
+  background: var(--color-accent-strong);
+}
+
 .cards {
   display: grid;
   grid-template-columns: repeat(3, 1fr);

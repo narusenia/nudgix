@@ -27,6 +27,7 @@ type Props = {
   onPreview: (prop: PropDef, token: Token | undefined) => void;
   onRestore: (prop: PropDef) => void;
   onCommit: (prop: PropDef, name: string | null) => void;
+  onNote: (note: string) => void;
 };
 
 function describe(d: Detection, t: Dict, category: Category): { text: string; hint?: string } {
@@ -41,6 +42,33 @@ function describe(d: Detection, t: Dict, category: Category): { text: string; hi
 }
 
 const px = (v: string | undefined) => (v && /^-?[\d.]+px$/.test(v) ? Number.parseFloat(v) : null);
+
+/** Comment for the agent. Kept local while typing and committed once, so undo restores the whole comment */
+function NoteField({ el, value, onCommit }: { el: Element; value: string; onCommit: (note: string) => void }) {
+  const t = useT();
+  const [draft, setDraft] = useState(value);
+  useEffect(() => setDraft(value), [value, el]);
+  return (
+    <textarea
+      className={s.noteInput}
+      rows={draft.includes('\n') ? 3 : 1}
+      value={draft}
+      placeholder={t.notePlaceholder}
+      title={t.noteHint}
+      onChange={(e) => setDraft(e.target.value)}
+      onBlur={() => draft !== value && onCommit(draft)}
+      onKeyDown={(e) => {
+        // Keep editor shortcuts (delete, undo and so on) from firing while typing
+        e.stopPropagation();
+        if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) e.currentTarget.blur();
+        if (e.key === 'Escape') {
+          setDraft(value);
+          requestAnimationFrame(() => (e.target as HTMLTextAreaElement).blur());
+        }
+      }}
+    />
+  );
+}
 
 export function PropertyPanel(props: Props) {
   const { selected, change, tokens, openKey, count, onToggle } = props;
@@ -123,6 +151,7 @@ export function PropertyPanel(props: Props) {
           </IconButton>
         </div>
         {info.text && count === 1 ? <div className={s.targetText}>{t.quote(info.text)}</div> : null}
+        {count === 1 ? <NoteField el={selected.el} value={change?.note ?? ''} onCommit={props.onNote} /> : null}
         <div className={`${s.seg} ${s.panelTabs}`}>
           {(['props', 'code'] as const).map((k) => (
             <button key={k} type="button" className={s.segItem} data-pressed={tab === k ? '' : undefined} onClick={() => pickTab(k)}>

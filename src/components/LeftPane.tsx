@@ -164,6 +164,14 @@ export function ChangeList({ changes, tokens, selectedEl, onSelect, onRevert, on
                     </span>
                   </div>
                 ) : null}
+                {change.note ? (
+                  <div className={s.changeRow}>
+                    <span className={s.rowLabel}>{t.note}</span>
+                    <span className={s.to}>
+                      <span className={s.ellipsis}>{change.note}</span>
+                    </span>
+                  </div>
+                ) : null}
               </div>
             </li>
           );

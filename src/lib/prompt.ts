@@ -43,6 +43,7 @@ function changeLines(change: Change, tokens: Tokens): string[] {
   if (change.removed) lines.push('remove');
   if (change.text) lines.push(`text "${change.text.from}"→"${change.text.to}"`);
   if (change.nudge) lines.push(`offset x${signed(change.nudge.x)} y${signed(change.nudge.y)}px`);
+  if (change.note) lines.push(`note ${JSON.stringify(change.note)}`);
   return lines;
 }
 

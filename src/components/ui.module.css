@@ -550,6 +550,27 @@
   font-weight: 600;
 }
 
+/* Comment for the agent, under the target name */
+.noteInput {
+  display: block;
+  width: 100%;
+  margin-top: 6px;
+  padding: 5px 9px;
+  border: 0;
+  border-radius: 7px;
+  outline: none;
+  resize: vertical;
+  font: 12px/1.5 inherit;
+  font-family: inherit;
+  color: var(--text);
+  background: var(--well);
+  box-shadow: var(--inset);
+}
+
+.noteInput:focus {
+  box-shadow: var(--inset), 0 0 0 1.5px var(--accent);
+}
+
 .targetText {
   color: var(--sub);
   white-space: nowrap;

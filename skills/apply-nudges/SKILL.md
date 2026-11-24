@@ -100,6 +100,14 @@ text "Terms update"→"Our terms changed"
 
 Change the text. If it comes from props, constants or API data, confirm where to change it.
 
+### Note
+
+```
+note "Make this card stand out as the recommended plan"
+```
+
+A comment the user wrote about the element in their own words. Treat it as a request for that element, alongside the other lines. If it is vague or would need a design decision, ask before editing.
+
 ## Adapters
 
 ### css-vars

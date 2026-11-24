@@ -90,6 +90,8 @@ export type Change = {
   };
   /** Text edit */
   text?: { from: string; to: string };
+  /** Free-form note for the coding agent, in the user's own words */
+  note?: string;
   /** For saving and reapplying. Position from body */
   locator?: string;
 };
@@ -102,4 +104,4 @@ export type Selected = {
 
 /** Change count (tokens, layout and reordering each count as one) */
 export const countOf = (c: Change) =>
-  Object.keys(c.props).length + Object.keys(c.layout ?? {}).length + (c.move !== undefined || c.insert ? 1 : 0) + (c.nudge ? 1 : 0) + (c.removed ? 1 : 0) + (c.text ? 1 : 0);
+  Object.keys(c.props).length + Object.keys(c.layout ?? {}).length + (c.move !== undefined || c.insert ? 1 : 0) + (c.nudge ? 1 : 0) + (c.removed ? 1 : 0) + (c.text ? 1 : 0) + (c.note ? 1 : 0);

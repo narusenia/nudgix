@@ -764,6 +764,21 @@ export function App() {
     else setSelection([]);
   };
 
+  /** Comment for the agent on one element. Undoable like the other changes */
+  const setNote = (el: Element, value: string) => {
+    const before = changes.current.get(el)?.note;
+    const next = value.trim() || undefined;
+    if (before === next) return;
+    const write = (note: string | undefined) => {
+      const e = ensureEntry(el);
+      if (note) e.note = note;
+      else delete e.note;
+      settle(el);
+    };
+    write(next);
+    push({ undo: () => write(before), redo: () => write(next) });
+  };
+
   // ---------------------------------------------------------------- text editing
   /** For a text-only element, rewrite its text node in place (so the node React holds is not replaced) */
   const setText = (el: Element, value: string) => {
@@ -1383,6 +1398,7 @@ export function App() {
         }}
         onRestore={restoreCommitted}
         onCommit={commit}
+        onNote={(note) => setNote(selected.el, note)}
       />
     ) : null;
 

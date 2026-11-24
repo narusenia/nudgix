@@ -18,6 +18,7 @@ nudgix shows your app in a frame and lets you try changes on it:
 - Drag spacing bands and handles on the page, reorder or move elements, edit text, remove elements, and offset them visually
 - Place Storybook stories into the page and change their props
 - See the selection as HTML and as React or Vue components (props and the source lines that wrote it), with the lines your changes will touch marked
+- Leave a comment on an element for the agent, in your own words
 - Copy everything as a prompt, one block per element: where it is written and what to change
 
 ![The code drawer and the Code tab show where the card is written and used](docs/images/code.jpg)
